@@ -1,6 +1,6 @@
 review.py runs on: Python 3.14.3; mode no-sandbox; srt 0.0.81; Darwin arm64
 PASS  [no-sandbox] full review: 4 bugs reproduced, files kept between calls, patch kept out of the sandbox, refusals, worktree untouched (exit 1, expected 1)
-   sandbox sees HOME=/private/var/folders/<tmp>/T/ai-review-uk71tilz/home
+   sandbox sees HOME=/private/var/folders/<tmp>/T/ai-review-dfal36jo/home
 PASS  [no-sandbox] --no-sandbox: loud warning printed; API key still kept out of the commands' env (exit 0, expected 0)
 PASS  [no-sandbox] --apply writes the patch (fix + NOTES.md) to the worktree; host import has no SyntaxWarning (exit 1, expected 1)
 PASS  [no-sandbox] --no-inline-diff keeps the diff out of the first message (exit 1, expected 1)
@@ -28,4 +28,4 @@ PASS  [no-sandbox] pre-push: an incomplete review (model server down) also stops
 PASS  [no-sandbox] pre-push: a clean review lets the push through (exit 0, expected 0)
 PASS  [no-sandbox] pre-push: AI_REVIEW_ON_INCOMPLETE=warn lets an incomplete review through (exit 0, expected 0)
 
-passed 25, failed 0 (work dir: /tmp/ai-review-demo.B7KO)
+passed 25, failed 0 (work dir: /tmp/ai-review-demo.r7Ud)

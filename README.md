@@ -2,7 +2,7 @@
 
 [![demo](https://github.com/weiping/local-code-review/actions/workflows/demo.yml/badge.svg)](https://github.com/weiping/local-code-review/actions/workflows/demo.yml)
 
-`review.py` 是一个在自己机器上运行的 AI 代码审查脚本，单文件、只用 Python 标准库，共 376 行（以 `wc -l` 为准）。它通过 OpenAI 兼容的 chat completions 接口调用模型（默认是本机的 [Magpie](https://github.com/yetone/magpie) 网关 `http://127.0.0.1:3425/v1`），模型发出的每条命令都在 Anthropic 的 [sandbox-runtime](https://github.com/anthropics/sandbox-runtime)（srt）里跑。模型先跑代码确认 bug，再以补丁形式给出修复；补丁不进沙箱，加 `--apply` 才写回工作区。
+`review.py` 是一个在自己机器上运行的 AI 代码审查脚本，单文件、只用 Python 标准库，共 378 行（以 `wc -l` 为准）。它通过 OpenAI 兼容的 chat completions 接口调用模型（默认是本机的 [Magpie](https://github.com/yetone/magpie) 网关 `http://127.0.0.1:3425/v1`），模型发出的每条命令都在 Anthropic 的 [sandbox-runtime](https://github.com/anthropics/sandbox-runtime)（srt）里跑。模型先跑代码确认 bug，再以补丁形式给出修复；补丁不进沙箱，加 `--apply` 才写回工作区。
 
 博客正文《给 AI 代码审查配一个能跑代码的沙箱》讲设计和取舍，本仓库是配套代码和测试。改编自 OpenRouter 官方博客 [Build an AI Code Reviewer with OpenRouter (Python)](https://openrouter.ai/blog/tutorials/ai-code-review/)（2026-11-01）。
 

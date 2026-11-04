@@ -131,8 +131,10 @@ class Sandbox:
 
     def run(self, command, limit, size):
         t = shutil.which("timeout") or shutil.which("gtimeout")  # macOS has neither unless coreutils is installed
-        inner = shlex.join([*([t, "-k", "5", str(limit)] if t else []), "bash", "-c", command])
-        cmd = [self.srt, "--settings", str(self.cfg), "-c", inner] if self.srt else ["/bin/sh", "-c", inner]
+        argv = [*([t, "-k", "5", str(limit)] if t else []), "bash", "-c", command]
+        # without srt, start timeout(1) directly: under a /bin/sh wrapper GNU timeout makes its own process group,
+        # which killpg(p.pid) below would miss
+        cmd = [self.srt, "--settings", str(self.cfg), "-c", shlex.join(argv)] if self.srt else argv
         p = subprocess.Popen(cmd, cwd=self.repo, env=self.env,
                              text=True, errors="replace", stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                              start_new_session=True)

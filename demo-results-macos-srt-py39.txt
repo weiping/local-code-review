@@ -1,6 +1,6 @@
 review.py runs on: Python 3.9.6; mode srt; srt 0.0.81; Darwin arm64
 PASS  [srt] full review: 4 bugs reproduced, files kept between calls, patch kept out of the sandbox, refusals, worktree untouched (exit 1, expected 1)
-   sandbox sees HOME=/private/var/folders/<tmp>/T/ai-review-lsw3eqf7/home
+   sandbox sees HOME=/private/var/folders/<tmp>/T/ai-review-aoldp65h/home
    ENV-NAMES CLAUDE_CODE_TMPDIR GIT_CONFIG_PARAMETERS GIT_SSH_COMMAND HOME JAVA_TOOL_OPTIONS LANG PATH PWD SANDBOX_RUNTIME SHLVL TERM TMPDIR _ __CF_USER_TEXT_ENCODING
 PASS  [srt] limits: real repo, home, temp dirs unreadable and unwritable; /tmp/claude closed; TMPDIR=$HOME; API key not in env (exit 0, expected 0)
 PASS  [srt] --apply writes the patch (fix + NOTES.md) to the worktree; host import has no SyntaxWarning (exit 1, expected 1)
@@ -35,4 +35,4 @@ PASS  [srt] pre-push: an incomplete review (model server down) also stops the pu
 PASS  [srt] pre-push: a clean review lets the push through (exit 0, expected 0)
 PASS  [srt] pre-push: AI_REVIEW_ON_INCOMPLETE=warn lets an incomplete review through (exit 0, expected 0)
 
-passed 29, failed 0 (work dir: /tmp/ai-review-demo.aQWO)
+passed 29, failed 0 (work dir: /tmp/ai-review-demo.YXuM)

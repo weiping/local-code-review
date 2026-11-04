@@ -1,6 +1,6 @@
 review.py runs on: Python 3.14.3; mode srt; srt 0.0.81; Darwin arm64
 PASS  [srt] full review: 4 bugs reproduced, files kept between calls, patch kept out of the sandbox, refusals, worktree untouched (exit 1, expected 1)
-   sandbox sees HOME=/private/var/folders/<tmp>/T/ai-review-2evv00_h/home
+   sandbox sees HOME=/private/var/folders/<tmp>/T/ai-review-ni1eh40w/home
    ENV-NAMES CLAUDE_CODE_TMPDIR GIT_CONFIG_PARAMETERS GIT_SSH_COMMAND HOME JAVA_TOOL_OPTIONS LANG PATH PWD SANDBOX_RUNTIME SHLVL TERM TMPDIR _ __CF_USER_TEXT_ENCODING
 PASS  [srt] limits: real repo, home, temp dirs unreadable and unwritable; /tmp/claude closed; TMPDIR=$HOME; API key not in env (exit 0, expected 0)
 PASS  [srt] --apply writes the patch (fix + NOTES.md) to the worktree; host import has no SyntaxWarning (exit 1, expected 1)
@@ -25,7 +25,7 @@ PASS  [srt] --allow-domain: pypi reachable, pip install works and lasts, example
 PASS  [srt] --allow-domain: an allowed name that resolves to a private address is refused (exit 0, expected 0)
 PASS  [srt] --allow-domain rejects a malformed host (exit 2, expected 2)
 PASS  [srt] SIGTERM (timeout or CI cancel): exit 2, temp dirs removed, sandboxed command stopped (exit 2, expected 2)
-PASS  [srt] macOS /usr/bin/timeout (BSD) also stops the command and its children (4s) (exit 0, expected 0)
+PASS  [srt] macOS /usr/bin/timeout (BSD) also stops the command and its children (5s) (exit 0, expected 0)
 PASS  [srt] no timeout(1) on PATH: the fallback kills the process group at limit + 15s (19s) (exit 0, expected 0)
 PASS  [srt] srt not on PATH: exit 2 with an install hint (exit 2, expected 2)
 PASS  [srt] srt cannot start a sandbox: exit 2, srt's error printed (exit 2, expected 2)
@@ -35,4 +35,4 @@ PASS  [srt] pre-push: an incomplete review (model server down) also stops the pu
 PASS  [srt] pre-push: a clean review lets the push through (exit 0, expected 0)
 PASS  [srt] pre-push: AI_REVIEW_ON_INCOMPLETE=warn lets an incomplete review through (exit 0, expected 0)
 
-passed 29, failed 0 (work dir: /tmp/ai-review-demo.nuy4)
+passed 29, failed 0 (work dir: /tmp/ai-review-demo.je7h)
