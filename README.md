@@ -18,6 +18,7 @@
 | `realmodel/results-srt-glm/`、`realmodel/results-srt-kimi/` | Mac mini M4 上经 Magpie 接入 `auto/glm-5.3`、`kimi-code-cn/k3.1-pro` 各跑 3 次的报告和汇总。云端模型，代码会发到服务商 |
 | `demo-results-macos-srt.txt`、`demo-results-macos-srt-py39.txt` | macOS 27.2（Mac mini M4）上 `run_demo.sh` 的完整输出，`review.py` 分别用 Python 3.14.3 和系统自带的 3.9.6 运行 |
 | `demo-results-macos-no-sandbox.txt` | 同一台 Mac 上 `run_demo.sh no-sandbox` 的输出（CI 用的模式） |
+| `demo-results-linux-srt.txt` | Debian 13 容器（内核 6.12，x86_64，bubblewrap 0.12.0）上 `run_demo.sh` 的完整输出，Python 3.13.5 |
 | `.github/workflows/demo.yml` | 本仓库的 CI：在 GitHub 托管的 `ubuntu-latest` 上用假模型跑 `run_demo.sh no-sandbox`，再用 act 跑 `ci/run_ci_demo.sh`。不装 srt，不用 secret，不调真实模型 |
 | `ci/ai-review.yml` | GitHub Actions workflow 示例（托管的 `ubuntu-latest`，`--no-sandbox`，只审同仓库 PR，脚本取自基准提交） |
 | `ci/run_ci_demo.sh` | 用 act 在本机按 `pull_request` 事件跑这个 workflow 的 7 项检查 |
@@ -25,10 +26,10 @@
 
 ## 前置条件
 
-- macOS 或 Linux，Python 3.9 或更高版本（macOS 自带的 3.9.6 可用），Git，Node.js。
+- macOS 或 Linux，Python 3.9 或更高版本（macOS 自带的 3.9.6 可用），Git，Node.js 22.12 或更高版本（srt 0.0.81 的 `engines` 要求；Debian 13 自带的 20.19、Ubuntu 24.04 自带的 18.19 都不够，用 NodeSource 或 nvm 装）。
 - srt：`npm install -g @anthropic-ai/sandbox-runtime@0.0.81`。srt 是 Beta 研究预览，配置格式可能变化，建议固定版本。
 - macOS 还要 ripgrep：`brew install ripgrep`。
-- Linux 还要 bubblewrap、socat、ripgrep：`sudo apt-get install bubblewrap socat ripgrep`。Ubuntu 24.04 及以上还要 `sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0`。
+- Linux 还要 bubblewrap、socat、ripgrep：`sudo apt-get install bubblewrap socat ripgrep`。Ubuntu 24.04 及以上还要 `sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0`；Debian 没有这个参数，不用设。
 - 演示里有两例要连 pypi.org（测 `--allow-domain`），需要联网。
 - Windows 没有测过。
 
@@ -70,7 +71,8 @@ python3 /path/to/review.py --model <提供方/模型名> --context tests/test_or
 - 模型在沙箱里用 `run_shell` 改动或删除的文件不会进入补丁。
 - `/usr`、`/etc` 这类系统目录在沙箱里仍然可读。
 - 使用 `--head` 时，`--context` 指定的文件从工作区读取。
-- Linux 上的 srt 这一版没有测过；Windows 没有测过。
+- Linux 上的 srt 只在一个 Debian 13 容器里测过（容器允许无特权用户命名空间，不需要 `--nested-sandbox`），没在 Ubuntu 和实体机上测过；Windows 没有测过。
+- Linux 上 srt 会在每个禁读的目录（如 `/tmp`）上盖一层空的 tmpfs，沙箱里往那里写会成功，但写进的是这层 tmpfs，命令结束就没了，碰不到真实文件。macOS 上则直接拒绝。
 
 ## CI
 

@@ -1,0 +1,36 @@
+review.py runs on: Python 3.13.5; mode srt; srt 0.0.81; Linux x86_64
+PASS  [srt] full review: 4 bugs reproduced, files kept between calls, patch kept out of the sandbox, refusals, worktree untouched (exit 1, expected 1)
+   sandbox sees HOME=/tmp/ai-review-i5_4j_yf/home
+   ENV-NAMES CLAUDE_CODE_TMPDIR GIT_CONFIG_PARAMETERS GIT_SSH_COMMAND HOME JAVA_TOOL_OPTIONS LANG PATH PWD SANDBOX_RUNTIME SHLVL TERM TMPDIR _
+PASS  [srt] limits: real repo, home, temp dirs unreadable and unwritable; /tmp/claude closed; TMPDIR=$HOME; API key not in env (exit 0, expected 0)
+PASS  [srt] --apply writes the patch (fix + NOTES.md) to the worktree; host import has no SyntaxWarning (exit 1, expected 1)
+PASS  [srt] --no-inline-diff keeps the diff out of the first message (exit 1, expected 1)
+PASS  [srt] no findings (exit 0, expected 0)
+PASS  [srt] unconfirmed high does not block by default (exit 0, expected 0)
+PASS  [srt] --block-unconfirmed makes it block (exit 1, expected 1)
+PASS  [srt] --block-at medium with --block-unconfirmed still blocks a high finding (exit 1, expected 1)
+PASS  [srt] model never calls submit_review (report keeps the error and token count) (exit 2, expected 2)
+PASS  [srt] model server unreachable (exit 2, expected 2)
+PASS  [srt] diff over --max-diff-kb (exit 2, expected 2)
+PASS  [srt] missing --model (exit 2, expected 2)
+PASS  [srt] --apply with --head is refused (exit 2, expected 2)
+PASS  [srt] run from a subdirectory (exit 1, expected 1)
+   network probe: NET-BLOCKED
+PASS  [srt] network probe gives NET-BLOCKED (exit 0, expected 0)
+PASS  [srt] run_shell timeout kills the command and its children (4s) (exit 0, expected 0)
+PASS  [srt] delete_file: --apply deletes in the worktree; rm in the sandbox does not (exit 0, expected 0)
+PASS  [srt] --allow-domain: pypi reachable, pip install works and lasts, example.com and direct sockets blocked (exit 0, expected 0)
+   PRIVATE-STATUS 500
+   PUBLIC-STATUS 200
+PASS  [srt] --allow-domain: an allowed name that resolves to a private address is refused (exit 0, expected 0)
+PASS  [srt] --allow-domain rejects a malformed host (exit 2, expected 2)
+PASS  [srt] SIGTERM (timeout or CI cancel): exit 2, temp dirs removed, sandboxed command stopped (exit 2, expected 2)
+PASS  [srt] srt not on PATH: exit 2 with an install hint (exit 2, expected 2)
+PASS  [srt] srt cannot start a sandbox: exit 2, srt's error printed (exit 2, expected 2)
+== pre-push hook
+PASS  [srt] pre-push: blocking findings in the pushed commit stop the push (exit 1, expected 1)
+PASS  [srt] pre-push: an incomplete review (model server down) also stops the push (exit 1, expected 1)
+PASS  [srt] pre-push: a clean review lets the push through (exit 0, expected 0)
+PASS  [srt] pre-push: AI_REVIEW_ON_INCOMPLETE=warn lets an incomplete review through (exit 0, expected 0)
+
+passed 27, failed 0 (work dir: /tmp/ai-review-demo.ieXg)

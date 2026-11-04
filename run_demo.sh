@@ -52,10 +52,15 @@ sc=$(mktemp /tmp/ai-review-canary.XXXX)   # on macOS /tmp is not the system temp
 export DEMO_REPO_FILE="$work/repo/app/orders.py" DEMO_HOME_CANARY="$hc" DEMO_TMP_CANARY="$tc" DEMO_SLASHTMP_CANARY="$sc"
 server limits; LLM_API_KEY=demo-canary-key $REVIEW --model fake >/dev/null 2>&1; rc=$?; stop
 t=$(tool_out); c=0
+# On Linux srt (bubblewrap) puts an empty tmpfs over each read-denied directory, so a write to /tmp inside
+# the sandbox succeeds and is thrown away when the command ends. There a write may succeed only if nothing
+# reaches the real file system (checked below with -e for every path); on macOS it must be refused outright.
+denied() { grep -qF "WRITE-DENIED $1" <<<"$t" || { [ "$(uname)" = Linux ] && grep -qF "WRITE-OPEN $1" <<<"$t"; }; }
 for p in "$DEMO_REPO_FILE" "$hc" "$tc" "$sc"; do
-  grep -qF "READ-DENIED $p" <<<"$t" && grep -qF "WRITE-DENIED $p" <<<"$t" || { echo "   not denied: $p"; c=1; }
+  grep -qF "READ-DENIED $p" <<<"$t" && denied "$p" || { echo "   not denied: $p"; c=1; }
   [ ! -e "$p.w" ] || { echo "   written: $p.w"; c=1; rm -f "$p.w"; }; done
-for want in "WRITE-DENIED /tmp" "WRITE-DENIED /tmp/claude" "TMPDIR-IS-HOME" "WRITE-OK-INSIDE" "SYSTEM-READABLE" "ENV-CLEAN"; do
+denied /tmp || { echo "   missing: WRITE-DENIED /tmp"; c=1; }
+for want in "WRITE-DENIED /tmp/claude" "TMPDIR-IS-HOME" "WRITE-OK-INSIDE" "SYSTEM-READABLE" "ENV-CLEAN"; do
   grep -qF -- "$want" <<<"$t" || { echo "   missing: $want"; c=1; }; done
 [ ! -e /tmp/ai-review-demo-escape ] && [ ! -e /tmp/claude/ai-review-demo ] || { c=1; rm -f /tmp/ai-review-demo-escape /tmp/claude/ai-review-demo; }
 grep -o 'ENV-NAMES.*' <<<"$t" | sed 's/^/   /'

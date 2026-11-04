@@ -5,7 +5,7 @@ It ignores what the reviewer says and returns the tool calls of one scenario, tu
 The checks it asks for are real commands that run in the chosen sandbox; only the judgement is fake.
 Usage: python3 fake_llm.py PORT SCENARIO [REQUEST_LOG]
 """
-import json, os, shlex, sys
+import json, os, shlex, socketserver, sys
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 CHECK = r"""python3 - <<'PY'
@@ -130,4 +130,10 @@ class Handler(BaseHTTPRequestHandler):
         pass
 
 
-HTTPServer(("127.0.0.1", int(sys.argv[1])), Handler).serve_forever()
+class Server(HTTPServer):
+    def server_bind(self):  # skip HTTPServer's getfqdn(): a slow reverse lookup of 127.0.0.1 delays listen() for ~35s
+        socketserver.TCPServer.server_bind(self)
+        self.server_name, self.server_port = "127.0.0.1", self.server_address[1]
+
+
+Server(("127.0.0.1", int(sys.argv[1])), Handler).serve_forever()
