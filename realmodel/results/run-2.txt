@@ -1,0 +1,6 @@
+HIGH   app/orders.py:10 (confirmed) The function now uses string formatting with single quotes around the status parameter, making it vulnerable to SQL injection attacks. An attacker could provide malicious input that would be executed as SQL.
+HIGH   app/orders.py:10 (confirmed) The function incorrectly uses number * size instead of (number - 1) * size for pagination. This causes incorrect results where items are not properly paginated.
+HIGH   app/orders.py:26 (confirmed) The function incorrectly uses 'is not' for string comparison, which checks object identity rather than value equality. This will not work as intended for string comparisons.
+HIGH   app/orders.py:30 (confirmed) The function removes the try-finally block that closes the database connection, which could lead to resource leaks and potential connection exhaustion.
+applied the patch to 1 file(s)
+4 findings, 4 blocking, 1 patched files, 35632 tokens, 466s

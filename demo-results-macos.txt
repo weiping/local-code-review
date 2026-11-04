@@ -1,0 +1,78 @@
+# macOS 27.2 (26B123), Mac mini Apple M4, 16 GB; Docker Desktop 28.1.1; 2026-11-04
+# WORK=... ./run_demo.sh docker unsafe-local   (review.py on /usr/bin/python3)
+review.py runs on: Python 3.9.6
+== backend: docker
+PASS  [docker] full review: 4 bugs reproduced, /tmp kept, patch kept out of the sandbox, refusals, worktree untouched (exit 1, expected 1)
+   sandbox sees HOME=/tmp
+PASS  [docker] --apply writes the patch (fix + NOTES.md) to the worktree; host import has no SyntaxWarning (exit 1, expected 1)
+PASS  [docker] --no-inline-diff keeps the diff out of the first message (exit 1, expected 1)
+PASS  [docker] no findings (exit 0, expected 0)
+PASS  [docker] unconfirmed high does not block by default (exit 0, expected 0)
+PASS  [docker] --block-unconfirmed makes it block (exit 1, expected 1)
+PASS  [docker] model never calls submit_review (report keeps the error and token count) (exit 2, expected 2)
+PASS  [docker] model server unreachable (exit 2, expected 2)
+PASS  [docker] diff over --max-diff-kb (exit 2, expected 2)
+PASS  [docker] missing --model (exit 2, expected 2)
+PASS  [docker] run from a subdirectory (exit 1, expected 1)
+   network probe: NET-BLOCKED
+PASS  [docker] network probe gives NET-BLOCKED (exit 0, expected 0)
+PASS  [docker] run_shell timeout kills the whole process group (4s) (exit 0, expected 0)
+PASS  [docker] delete_file: --apply deletes in the worktree; rm in the sandbox does not (exit 0, expected 0)
+PASS  [docker] --allow-domain on macOS: refused with a clear error, nothing left behind (exit 2, expected 2)
+PASS  [docker] SIGTERM (timeout or CI cancel) still removes the container (exit 2, expected 2)
+PASS  [docker] --image with fixtures/Dockerfile.deps: dependency importable with the network off (exit 0, expected 0)
+== backend: unsafe-local
+PASS  [unsafe-local] full review: 4 bugs reproduced, /tmp kept, patch kept out of the sandbox, refusals, worktree untouched (exit 1, expected 1)
+   sandbox sees HOME=/Users/<user>
+PASS  [unsafe-local] --apply writes the patch (fix + NOTES.md) to the worktree; host import has no SyntaxWarning (exit 1, expected 1)
+PASS  [unsafe-local] --no-inline-diff keeps the diff out of the first message (exit 1, expected 1)
+PASS  [unsafe-local] no findings (exit 0, expected 0)
+PASS  [unsafe-local] unconfirmed high does not block by default (exit 0, expected 0)
+PASS  [unsafe-local] --block-unconfirmed makes it block (exit 1, expected 1)
+PASS  [unsafe-local] model never calls submit_review (report keeps the error and token count) (exit 2, expected 2)
+PASS  [unsafe-local] model server unreachable (exit 2, expected 2)
+PASS  [unsafe-local] diff over --max-diff-kb (exit 2, expected 2)
+PASS  [unsafe-local] missing --model (exit 2, expected 2)
+PASS  [unsafe-local] run from a subdirectory (exit 1, expected 1)
+   network probe: NET-OPEN
+PASS  [unsafe-local] network probe gives NET-OPEN (exit 0, expected 0)
+PASS  [unsafe-local] run_shell timeout kills the whole process group (4s) (exit 0, expected 0)
+PASS  [unsafe-local] delete_file: --apply deletes in the worktree; rm in the sandbox does not (exit 0, expected 0)
+PASS  [unsafe-local] --allow-domain is refused on unsafe-local (no allowlist there) (exit 2, expected 2)
+== pre-push hook (backend docker)
+PASS  [docker] pre-push: blocking findings in the pushed commit stop the push (exit 1, expected 1)
+PASS  [docker] pre-push: an incomplete review (model server down) also stops the push (exit 1, expected 1)
+PASS  [docker] pre-push: a clean review lets the push through (exit 0, expected 0)
+PASS  [docker] pre-push: AI_REVIEW_ON_INCOMPLETE=warn lets an incomplete review through (exit 0, expected 0)
+
+passed 36, failed 0 (work dir: /tmp/…)
+CI workflow example: bash ci/run_ci_demo.sh [docker|bwrap]   (needs act)
+
+# PY=/opt/homebrew/bin/python3 ./run_demo.sh unsafe-local
+review.py runs on: Python 3.14.3
+== backend: unsafe-local
+PASS  [unsafe-local] full review: 4 bugs reproduced, /tmp kept, patch kept out of the sandbox, refusals, worktree untouched (exit 1, expected 1)
+   sandbox sees HOME=/Users/<user>
+PASS  [unsafe-local] --apply writes the patch (fix + NOTES.md) to the worktree; host import has no SyntaxWarning (exit 1, expected 1)
+PASS  [unsafe-local] --no-inline-diff keeps the diff out of the first message (exit 1, expected 1)
+PASS  [unsafe-local] no findings (exit 0, expected 0)
+PASS  [unsafe-local] unconfirmed high does not block by default (exit 0, expected 0)
+PASS  [unsafe-local] --block-unconfirmed makes it block (exit 1, expected 1)
+PASS  [unsafe-local] model never calls submit_review (report keeps the error and token count) (exit 2, expected 2)
+PASS  [unsafe-local] model server unreachable (exit 2, expected 2)
+PASS  [unsafe-local] diff over --max-diff-kb (exit 2, expected 2)
+PASS  [unsafe-local] missing --model (exit 2, expected 2)
+PASS  [unsafe-local] run from a subdirectory (exit 1, expected 1)
+   network probe: NET-OPEN
+PASS  [unsafe-local] network probe gives NET-OPEN (exit 0, expected 0)
+PASS  [unsafe-local] run_shell timeout kills the whole process group (4s) (exit 0, expected 0)
+PASS  [unsafe-local] delete_file: --apply deletes in the worktree; rm in the sandbox does not (exit 0, expected 0)
+PASS  [unsafe-local] --allow-domain is refused on unsafe-local (no allowlist there) (exit 2, expected 2)
+== pre-push hook (backend unsafe-local)
+PASS  [unsafe-local] pre-push: blocking findings in the pushed commit stop the push (exit 1, expected 1)
+PASS  [unsafe-local] pre-push: an incomplete review (model server down) also stops the push (exit 1, expected 1)
+PASS  [unsafe-local] pre-push: a clean review lets the push through (exit 0, expected 0)
+PASS  [unsafe-local] pre-push: AI_REVIEW_ON_INCOMPLETE=warn lets an incomplete review through (exit 0, expected 0)
+
+passed 19, failed 0 (work dir: /tmp/…)
+CI workflow example: bash ci/run_ci_demo.sh [docker|bwrap]   (needs act)

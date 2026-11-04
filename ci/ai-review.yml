@@ -1,0 +1,50 @@
+# .github/workflows/ai-review.yml: AI review for pull requests on a self-hosted runner.
+# The runner needs Python 3.9+, Git, network access to your model server, and the chosen sandbox (docker or bwrap).
+name: ai-review
+on:
+  pull_request:                     # never pull_request_target: that would run PR code with the base repo's secrets
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read                    # the job only reads code
+jobs:
+  review:
+    # Same-repository PRs only. Fork PRs never reach the self-hosted runner.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, linux]
+    timeout-minutes: 30
+    env:
+      LLM_BASE_URL: ${{ vars.LLM_BASE_URL }}
+      LLM_API_KEY: ${{ secrets.LLM_API_KEY }}           # optional; a key that can only call the model
+      AI_REVIEW_MODEL: ${{ vars.AI_REVIEW_MODEL }}
+      AI_REVIEW_SANDBOX: ${{ vars.AI_REVIEW_SANDBOX || 'docker' }}
+      BASE: ${{ github.event.pull_request.base.sha }}
+      HEAD: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0                # full history: base and head commits must both be present
+          persist-credentials: false
+      - name: Take review.py from the base commit, not from the PR
+        run: git show "$BASE:tools/review.py" > "$RUNNER_TEMP/review.py"
+      - name: Review base...head
+        run: |
+          set +e
+          python3 -I "$RUNNER_TEMP/review.py" --model "$AI_REVIEW_MODEL" --sandbox "$AI_REVIEW_SANDBOX" \
+            --base "$BASE" --head "$HEAD" --output "$RUNNER_TEMP/ai-review.json"
+          rc=$?
+          python3 -c 'import json, sys; d = json.load(open(sys.argv[1])); open(sys.argv[2], "w").write("".join(p["diff"] for p in d.get("patches", [])))' \
+            "$RUNNER_TEMP/ai-review.json" "$RUNNER_TEMP/ai-review.patch" 2>/dev/null
+          case $rc in
+            0) echo "AI review passed" ;;
+            1) echo "::error title=AI review::blocking findings, see the ai-review artifact"; exit 1 ;;
+            *) echo "::error title=AI review incomplete::exit $rc (model server, sandbox or configuration problem)"; exit 2 ;;
+          esac
+      - name: Upload report and suggested patches
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-review
+          path: |
+            ${{ runner.temp }}/ai-review.json
+            ${{ runner.temp }}/ai-review.patch
+          if-no-files-found: ignore

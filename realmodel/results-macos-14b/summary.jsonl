@@ -1,0 +1,3 @@
+{"run": 1, "exit": 2, "seconds": 1024, "oracle_after_apply": {"sql_injection": false, "pagination": false, "is_not": false, "retry": false, "conn_close": false}}
+{"run": 2, "exit": 2, "seconds": 389, "oracle_after_apply": {"sql_injection": false, "pagination": false, "is_not": false, "retry": false, "conn_close": false}}
+{"run": 3, "exit": 2, "seconds": 383, "oracle_after_apply": {"sql_injection": false, "pagination": false, "is_not": false, "retry": false, "conn_close": false}}

@@ -1,0 +1,6 @@
+# A sandbox image with the review's third-party dependencies baked in, for reviews that run without network.
+# Build: docker build -t ai-review-deps -f fixtures/Dockerfile.deps fixtures   (or podman build ...)
+# Use:   python3 review.py --sandbox docker --image ai-review-deps ...
+# Pin the base by digest for real use, e.g. FROM docker.io/library/python:3.12-slim@sha256:...
+FROM docker.io/library/python:3.12-slim
+RUN pip install --no-cache-dir six==1.17.0

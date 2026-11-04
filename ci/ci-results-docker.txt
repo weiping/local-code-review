@@ -1,0 +1,11 @@
+act: act version 0.2.96   sandbox: docker   work: /tmp/XXXX
+PASS  buggy-pr: job fail (expected fail), artifacts: 1, log: /tmp/XXXX/buggy-pr.log
+PASS  clean-pr: job pass (expected pass), artifacts: 1, log: /tmp/XXXX/clean-pr.log
+PASS  config-error: job fail (expected fail), artifacts: 1, log: /tmp/XXXX/config-error.log
+PASS  tampered-pr: job fail (expected fail), artifacts: 1, log: /tmp/XXXX/tampered-pr.log
+PASS  fork-pr: job pass (expected pass), artifacts: 0, log: /tmp/XXXX/fork-pr.log
+PASS  buggy-artifact: job fail (expected fail), artifacts: 1, log: /tmp/XXXX/buggy-artifact.log
+  artifact contents: ['ai-review.json', 'ai-review.patch']
+PASS  artifact has ai-review.json and ai-review.patch
+
+passed 7, failed 0

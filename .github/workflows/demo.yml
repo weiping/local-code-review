@@ -1,0 +1,44 @@
+# Runs the scripted demo (fake model, no real model, no secrets) on GitHub-hosted runners, one job per sandbox backend.
+name: demo
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  demo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        backend: [bwrap, docker, podman, unsafe-local]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Show the environment
+        run: |
+          cat /etc/os-release | head -n 2; uname -r; python3 --version; git --version
+          docker --version || true; podman --version || true
+      - name: Install bubblewrap
+        if: matrix.backend == 'bwrap'
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q bubblewrap
+          # Ubuntu 24.04 blocks unprivileged user namespaces through AppArmor by default
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || true
+          bwrap --version
+      - name: Check podman
+        if: matrix.backend == 'podman'
+        run: podman --version && podman info --format '{{.Host.Security.Rootless}} rootless'
+      - name: run_demo.sh ${{ matrix.backend }}
+        run: |
+          set -o pipefail
+          bash run_demo.sh ${{ matrix.backend }} 2>&1 | tee "demo-${{ matrix.backend }}.txt"
+      - name: Upload the output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-${{ matrix.backend }}
+          path: demo-${{ matrix.backend }}.txt

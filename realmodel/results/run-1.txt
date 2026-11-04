@@ -1,0 +1,3 @@
+HIGH   app/orders.py:9 (confirmed) The find_orders() function now uses string formatting with single quotes around the status parameter, making it vulnerable to SQL injection attacks. An attacker could provide malicious input that would be executed as SQL.
+applied the patch to 0 file(s)
+1 findings, 1 blocking, 0 patched files, 13404 tokens, 214s

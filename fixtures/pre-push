@@ -1,0 +1,24 @@
+#!/bin/sh
+# Save as .git/hooks/pre-push and chmod +x. Reviews exactly the commits being pushed (remote sha...local sha).
+# Exit code 1 (blocking findings) or 2 (review incomplete) stops the push; `git push --no-verify` skips the hook.
+# Set AI_REVIEW_ON_INCOMPLETE=warn to let a push through when the review can't finish.
+z=0000000000000000000000000000000000000000
+script=${AI_REVIEW_SCRIPT:-tools/review.py}
+while read -r lref lsha rref rsha; do
+  [ "$lsha" = "$z" ] && continue                       # deleting a remote branch: nothing to review
+  if [ "$rsha" = "$z" ]; then                          # new remote branch: review since the merge base
+    base=$(git merge-base "$lsha" "${AI_REVIEW_BASE:-origin/main}" 2>/dev/null) ||
+      { echo "ai-review: no base for $lref, skipped" >&2; continue; }
+  else
+    base=$rsha
+  fi
+  python3 -I "$script" --model "${AI_REVIEW_MODEL:?set AI_REVIEW_MODEL}" --sandbox "${AI_REVIEW_SANDBOX:-bwrap}" \
+    --base "$base" --head "$lsha" ${AI_REVIEW_CONTEXT:+--context $AI_REVIEW_CONTEXT} </dev/null
+  rc=$?
+  if [ $rc -eq 1 ]; then echo "ai-review: blocking findings, push stopped" >&2; exit 1; fi
+  if [ $rc -ne 0 ]; then
+    echo "ai-review: review incomplete (exit $rc, see .git/ai-review.json)" >&2
+    [ "${AI_REVIEW_ON_INCOMPLETE:-block}" = warn ] || { echo "ai-review: push stopped" >&2; exit 1; }
+  fi
+done
+exit 0

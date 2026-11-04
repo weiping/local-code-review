@@ -1,0 +1,6 @@
+HIGH   app/orders.py:10 (confirmed) The function now uses string formatting with single quotes around the status parameter, which makes it vulnerable to SQL injection attacks. An attacker could provide malicious input that would be executed as SQL.
+MEDIUM app/orders.py:12 (confirmed) The function now uses 'number * size' instead of '(number - 1) * size', which causes incorrect pagination. This would skip items instead of properly paginating them.
+MEDIUM app/orders.py:28 (confirmed) The function now uses 'is not' instead of '!=' for status comparison. 'is' checks object identity, not value equality, so it would not correctly exclude refunded orders.
+MEDIUM app/orders.py:32 (confirmed) The function removes the try-finally block that closes the database connection, potentially leaving connections open and causing resource leaks.
+applied the patch to 1 file(s)
+4 findings, 1 blocking, 1 patched files, 30689 tokens, 303s
