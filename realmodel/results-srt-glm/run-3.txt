@@ -1,0 +1,7 @@
+HIGH   app/orders.py:12 (confirmed) The parameterized query was replaced by an f-string, so the status argument is spliced into SQL. Any caller-controlled status can change the WHERE clause and read arbitrary rows (e.g. 'paid\' OR 1=1 --' leaks refunded rows). Restore conn.execute("... WHERE status = ?", (status,)).
+HIGH   app/orders.py:21 (confirmed) `o["status"] is not "refunded"` compares by identity instead of value. For sqlite-loaded or otherwise non-interned status strings the comparison is True, so refunded orders are included in revenue. Fix: use != "refunded".
+MEDIUM app/orders.py:16 (confirmed) start = number * size makes page 1 return items 20..39 instead of 0..19; the first page is unreachable and paging from page 1 covers only 80 of 100 items. Fix: start = (number - 1) * size.
+MEDIUM app/orders.py:30 (confirmed) The final `raise` was replaced by `return None`, so after all attempts fail retry silently returns None. Callers then use None as the result (or crash with a confusing TypeError far from the real failure) and the original traceback is lost. Fix: restore `raise`.
+MEDIUM app/orders.py:34 (confirmed) The try/finally closing the connection was removed, so the sqlite connection is only closed when GC collects it; a long-lived process exhausts file descriptors and keeps DB files open (notably problematic on Windows). Fix: restore try/finally: conn.close().
+applied the patch to 1 file(s)
+5 findings, 2 blocking, 1 patched files, 41141 tokens, 158s

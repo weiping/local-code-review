@@ -5,7 +5,7 @@ It ignores what the reviewer says and returns the tool calls of one scenario, tu
 The checks it asks for are real commands that run in the chosen sandbox; only the judgement is fake.
 Usage: python3 fake_llm.py PORT SCENARIO [REQUEST_LOG]
 """
-import json, sys
+import json, os, shlex, sys
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 CHECK = r"""python3 - <<'PY'
@@ -45,7 +45,25 @@ try:
 except Exception:
     print("DIRECT-BLOCKED")
 PY"""
-PIP = "pip install --user --no-cache-dir -q six 2>&1 | tail -2; python3 -c 'import six; print(\"PIP-OK\")'"
+PIP = ("python3 -m pip install --target \"$HOME/pylib\" --no-cache-dir -q six 2>&1 | tail -2; "
+       "PYTHONPATH=\"$HOME/pylib\" python3 -c 'import six; print(\"PIP-OK\")'")
+PIP_KEPT = "PYTHONPATH=\"$HOME/pylib\" python3 -c 'import six; print(\"PIP-KEPT\")'"
+# Paths outside the sandbox that run_demo.sh puts canary files in; the sandbox must not read or write them.
+OUTSIDE = [os.environ.get(k, "/nonexistent") for k in ("DEMO_REPO_FILE", "DEMO_HOME_CANARY", "DEMO_TMP_CANARY", "DEMO_SLASHTMP_CANARY")]
+q = shlex.quote
+LIMITS = "; ".join(
+    [f"cat {q(p)} >/dev/null 2>&1 && echo READ-OPEN {q(p)} || echo READ-DENIED {q(p)}" for p in OUTSIDE] +
+    [f"touch {q(p + '.w')} 2>/dev/null && echo WRITE-OPEN {q(p)} || echo WRITE-DENIED {q(p)}" for p in OUTSIDE] +
+    ["touch /tmp/ai-review-demo-escape 2>/dev/null && echo WRITE-OPEN /tmp || echo WRITE-DENIED /tmp",
+     "mkdir -p /tmp/claude 2>/dev/null; touch /tmp/claude/ai-review-demo 2>/dev/null && echo WRITE-OPEN /tmp/claude"
+     " || echo WRITE-DENIED /tmp/claude",
+     "[ \"$TMPDIR\" = \"$HOME\" ] && echo TMPDIR-IS-HOME || echo TMPDIR-ELSEWHERE $TMPDIR",
+     "touch \"$HOME/h\" ./w && echo WRITE-OK-INSIDE",
+     "cat /etc/hosts >/dev/null && echo SYSTEM-READABLE",
+     "env | grep -q demo-canary-key && echo ENV-LEAKED || echo ENV-CLEAN",
+     "echo ENV-NAMES $(env | cut -d= -f1 | grep -v -i proxy | sort | tr '\\n' ' ')"])
+PRIVATE = ("curl -s -m 10 -o /dev/null -w 'PRIVATE-STATUS %{http_code}\\n' http://10.0.0.1.nip.io/ || echo PRIVATE-BLOCKED; "
+           "curl -s -m 20 -o /dev/null -w 'PUBLIC-STATUS %{http_code}\\n' https://pypi.org/simple/six/")
 F = lambda file, line, sev, ok, why, ev: {"file": file, "line": line, "severity": sev, "confirmed": ok,
                                           "explanation": why, "evidence": ev}
 GOOD = [F("app/orders.py", 12, "high", True, "status is formatted into the SQL string (injection)", "injection rows: 3"),
@@ -76,10 +94,10 @@ S = {
                 ("create_file", {"path": "scratch.txt", "content": "tmp\n"}), ("delete_file", {"path": "scratch.txt"})],
                [("run_shell", {"command": "rm data/catalog.txt && echo removed-in-sandbox; test -f app/report.py && echo REPORT-STILL-IN-SANDBOX"})],
                [("submit_review", {"findings": []})]],
-    "deps": [[("run_shell", {"command": "python3 -c 'import six; print(\"IMAGE-DEPS-OK\", six.__version__)'; " + NET})],
-             [("submit_review", {"findings": []})]],
+    "limits": [[("run_shell", {"command": LIMITS})], [("submit_review", {"findings": []})]],
+    "private": [[("run_shell", {"command": PRIVATE})], [("submit_review", {"findings": []})]],
     "allow": [[("run_shell", {"command": ALLOW})], [("run_shell", {"command": PIP})],
-              [("run_shell", {"command": "python3 -c 'import six; print(\"PIP-KEPT\")'"})],
+              [("run_shell", {"command": PIP_KEPT})],
               [("submit_review", {"findings": []})]],
 }
 name, turn = sys.argv[2], {"n": 0}

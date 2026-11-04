@@ -1,0 +1,31 @@
+review.py runs on: Python 3.14.3; mode no-sandbox; srt 0.0.81; Darwin arm64
+PASS  [no-sandbox] full review: 4 bugs reproduced, files kept between calls, patch kept out of the sandbox, refusals, worktree untouched (exit 1, expected 1)
+   sandbox sees HOME=/private/var/folders/<tmp>/T/ai-review-uk71tilz/home
+PASS  [no-sandbox] --no-sandbox: loud warning printed; API key still kept out of the commands' env (exit 0, expected 0)
+PASS  [no-sandbox] --apply writes the patch (fix + NOTES.md) to the worktree; host import has no SyntaxWarning (exit 1, expected 1)
+PASS  [no-sandbox] --no-inline-diff keeps the diff out of the first message (exit 1, expected 1)
+PASS  [no-sandbox] no findings (exit 0, expected 0)
+PASS  [no-sandbox] unconfirmed high does not block by default (exit 0, expected 0)
+PASS  [no-sandbox] --block-unconfirmed makes it block (exit 1, expected 1)
+PASS  [no-sandbox] --block-at medium with --block-unconfirmed still blocks a high finding (exit 1, expected 1)
+PASS  [no-sandbox] model never calls submit_review (report keeps the error and token count) (exit 2, expected 2)
+PASS  [no-sandbox] model server unreachable (exit 2, expected 2)
+PASS  [no-sandbox] diff over --max-diff-kb (exit 2, expected 2)
+PASS  [no-sandbox] missing --model (exit 2, expected 2)
+PASS  [no-sandbox] --apply with --head is refused (exit 2, expected 2)
+PASS  [no-sandbox] run from a subdirectory (exit 1, expected 1)
+   network probe: NET-OPEN
+PASS  [no-sandbox] network probe gives NET-OPEN (exit 0, expected 0)
+PASS  [no-sandbox] run_shell timeout kills the command and its children (4s) (exit 0, expected 0)
+PASS  [no-sandbox] delete_file: --apply deletes in the worktree; rm in the sandbox does not (exit 0, expected 0)
+PASS  [no-sandbox] --no-sandbox refuses --allow-domain (no allowlist without srt) (exit 2, expected 2)
+PASS  [no-sandbox] --allow-domain rejects a malformed host (exit 2, expected 2)
+PASS  [no-sandbox] SIGTERM (timeout or CI cancel): exit 2, temp dirs removed, sandboxed command stopped (exit 2, expected 2)
+PASS  [no-sandbox] --no-sandbox works without srt installed (exit 1, expected 1)
+== pre-push hook
+PASS  [no-sandbox] pre-push: blocking findings in the pushed commit stop the push (exit 1, expected 1)
+PASS  [no-sandbox] pre-push: an incomplete review (model server down) also stops the push (exit 1, expected 1)
+PASS  [no-sandbox] pre-push: a clean review lets the push through (exit 0, expected 0)
+PASS  [no-sandbox] pre-push: AI_REVIEW_ON_INCOMPLETE=warn lets an incomplete review through (exit 0, expected 0)
+
+passed 25, failed 0 (work dir: /tmp/ai-review-demo.B7KO)

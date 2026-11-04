@@ -1,4 +1,6 @@
-# Runs the scripted demo (fake model, no real model, no secrets) on GitHub-hosted runners, one job per sandbox backend.
+# The repository's own CI on GitHub-hosted ubuntu-latest: no secrets, no real model, no srt.
+# A hosted runner is a fresh VM that is thrown away after the job, so review.py runs with --no-sandbox here;
+# the srt sandbox checks run locally (bash run_demo.sh on macOS or Linux, see demo-results-macos-srt.txt).
 name: demo
 on:
   push:
@@ -6,39 +8,50 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+env:
+  ACT_VERSION: 0.2.96
 jobs:
   demo:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        backend: [bwrap, docker, podman, unsafe-local]
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
       - name: Show the environment
-        run: |
-          cat /etc/os-release | head -n 2; uname -r; python3 --version; git --version
-          docker --version || true; podman --version || true
-      - name: Install bubblewrap
-        if: matrix.backend == 'bwrap'
-        run: |
-          sudo apt-get update -q && sudo apt-get install -y -q bubblewrap
-          # Ubuntu 24.04 blocks unprivileged user namespaces through AppArmor by default
-          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || true
-          bwrap --version
-      - name: Check podman
-        if: matrix.backend == 'podman'
-        run: podman --version && podman info --format '{{.Host.Security.Rootless}} rootless'
-      - name: run_demo.sh ${{ matrix.backend }}
+        run: head -n 2 /etc/os-release; uname -rm; python3 --version; git --version
+      - name: run_demo.sh no-sandbox (scripted fake model)
         run: |
           set -o pipefail
-          bash run_demo.sh ${{ matrix.backend }} 2>&1 | tee "demo-${{ matrix.backend }}.txt"
+          bash run_demo.sh no-sandbox 2>&1 | tee demo-no-sandbox.txt
       - name: Upload the output
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: demo-${{ matrix.backend }}
-          path: demo-${{ matrix.backend }}.txt
+          name: demo-no-sandbox
+          path: demo-no-sandbox.txt
+
+  ci-example:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install act (pinned, checksum verified)
+        run: |
+          cd "$RUNNER_TEMP"
+          base="https://github.com/nektos/act/releases/download/v$ACT_VERSION"
+          curl -fsSLO "$base/act_Linux_x86_64.tar.gz" && curl -fsSLO "$base/checksums.txt"
+          grep ' act_Linux_x86_64.tar.gz$' checksums.txt | sha256sum -c -
+          mkdir -p act && tar -xzf act_Linux_x86_64.tar.gz -C act && echo "$RUNNER_TEMP/act" >> "$GITHUB_PATH"
+      - name: ci/run_ci_demo.sh (ci/ai-review.yml run by act on this runner, fake model)
+        run: |
+          set -o pipefail
+          bash ci/run_ci_demo.sh 2>&1 | tee ci-example.txt
+      - name: Upload the output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-example
+          path: ci-example.txt

@@ -1,13 +1,13 @@
 #!/bin/bash
-# Runs ci/ai-review.yml locally with act (nektos/act) in self-hosted mode against the demo repo and fake model.
-# Usage: bash ci/run_ci_demo.sh [docker|bwrap]   (needs act; with -P ...=-self-hosted the steps run directly on this machine)
+# Runs ci/ai-review.yml locally with act (nektos/act) against the demo repo and fake model.
+# Usage: bash ci/run_ci_demo.sh   (needs act; -P ubuntu-latest=-self-hosted runs the steps directly on this machine,
+# with review.py --no-sandbox as in the workflow, so run it only on a throwaway machine such as a CI runner)
 set -u
 here=$(cd "$(dirname "$0")/.." && pwd)
-sandbox=${1:-docker}
 work=$(mktemp -d /tmp/ai-review-ci.XXXX)
 ACT=${ACT:-act}
 port=18900 pass=0 fail=0
-echo "act: $($ACT --version)   sandbox: $sandbox   work: $work"
+echo "act: $($ACT --version)   work: $work"
 
 # demo repo: main has the workflow and tools/review.py; each PR branch is one commit on top of main
 sh "$here/fixtures/make_repo.sh" "$work/repo" >/dev/null && cd "$work/repo"
@@ -27,8 +27,8 @@ run() { # name branch scenario expected(pass|fail) grep-pattern [base_url] [head
   python3 "$here/fake_llm.py" $port "$scen" & local srv=$!; sleep 0.4
   rm -rf "$work/artifacts"
   XDG_CONFIG_HOME="$work/cfg" $ACT pull_request -W .github/workflows/ai-review.yml -e "$work/event.json" \
-    -P self-hosted=-self-hosted -P linux=-self-hosted --artifact-server-path "$work/artifacts" \
-    --var LLM_BASE_URL="${url:-http://127.0.0.1:$port/v1}" --var AI_REVIEW_MODEL=fake --var AI_REVIEW_SANDBOX="$sandbox" \
+    -P ubuntu-latest=-self-hosted --artifact-server-path "$work/artifacts" \
+    --var LLM_BASE_URL="${url:-http://127.0.0.1:$port/v1}" --var AI_REVIEW_MODEL=fake \
     > "$work/$name.log" 2>&1
   local rc=$?; kill $srv 2>/dev/null; wait $srv 2>/dev/null
   local got=pass; [ $rc = 0 ] || got=fail

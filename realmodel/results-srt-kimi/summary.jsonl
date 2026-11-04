@@ -1,0 +1,3 @@
+{"run": 1, "exit": 1, "seconds": 191, "tokens": 67224, "oracle_after_apply": {"sql_injection": true, "pagination": true, "is_not": true, "retry": true, "conn_close": true}}
+{"run": 2, "exit": 1, "seconds": 203, "tokens": 71222, "oracle_after_apply": {"sql_injection": true, "pagination": true, "is_not": true, "retry": true, "conn_close": true}}
+{"run": 3, "exit": 1, "seconds": 204, "tokens": 64609, "oracle_after_apply": {"sql_injection": true, "pagination": true, "is_not": true, "retry": true, "conn_close": true}}
