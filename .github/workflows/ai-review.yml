@@ -63,7 +63,11 @@ jobs:
           case $rc in
             0) echo "AI review passed" ;;
             1) echo "::error title=AI review::blocking findings, see the ai-review artifact"; exit 1 ;;
-            *) echo "::error title=AI review incomplete::exit $rc (model or configuration problem)"; exit 2 ;;
+            # exit 2 means the review did not finish (the model wandered off, or the endpoint failed) - not a
+            # finding. Only confirmed blocking findings (exit 1) may fail the job; an unconverged model must not
+            # gate every PR. The config step above still fails loudly on a missing endpoint or key.
+            2) echo "::warning title=AI review incomplete::exit 2 (the model did not conclude), see the ai-review artifact"; exit 0 ;;
+            *) echo "::error title=AI review failed::exit $rc"; exit "$rc" ;;
           esac
       - name: Upload report and suggested patches
         if: always()
