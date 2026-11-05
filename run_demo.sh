@@ -96,6 +96,9 @@ fresh; server silent; $REVIEW --model fake >/dev/null 2>&1; rc=$?; stop
 c=0; python3 -c "import json; d=json.load(open('.git/ai-review.json')); assert d['error'] and d['tokens'] >= 0" 2>/dev/null || c=1
 check "model never calls submit_review (report keeps the error and token count)" 2 $rc $c
 
+fresh; server late-submit; $REVIEW --model fake --max-turns 6 >/dev/null 2>&1; rc=$?; stop
+check "a model that only checks forever is told to wrap up and submits a verdict" 0 $rc
+
 fresh; LLM_BASE_URL=http://127.0.0.1:9/v1 $REVIEW --model fake >/dev/null 2>&1; rc=$?
 check "model server unreachable" 2 $rc
 

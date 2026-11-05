@@ -46,6 +46,12 @@ fixes with edit_file, create_file or delete_file, paths relative to the reposito
 record a patch outside the sandbox and never change it, so your checks always run against the change
 as written. Do your checks before proposing fixes.
 Finish by calling submit_review with every finding. Write explanations in {lang}."""
+# Shown when the model stops calling tools, and when the turn budget is nearly spent.
+SUBMIT_NOW = ("Call submit_review now: report every finding you have (with the evidence that shows it), "
+              "or submit an empty list if you found none.")
+WRAP_UP = ("You have {left} turns left. Stop running checks and call submit_review now: report every finding "
+           "you have (with the evidence that shows it), or submit an empty list if you found none.")
+WRAP_UP_TURNS = 3   # when this many turns are left, ask the model to wrap up
 PRIVATE = ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "100.64.0.0/10", "fc00::/7"]
 
 
@@ -313,8 +319,9 @@ def review(a, diff, work, sb, top):
                 {"role": "user", "content": first}]
     originals, findings, tokens, nudges, start = {}, None, 0, 0, time.time()
     temp = 0
+    wrapped = False
     try:
-        for _ in range(a.max_turns):
+        for turn in range(a.max_turns):
             body = {"model": a.model, "messages": messages, "tools": TOOLS, "temperature": temp}
             try:
                 res = chat(body)
@@ -336,7 +343,7 @@ def review(a, diff, work, sb, top):
                 nudges += 1
                 if nudges > 2:
                     raise Incomplete("the model stopped without calling submit_review")
-                messages.append({"role": "user", "content": "Call submit_review with your findings."})
+                messages.append({"role": "user", "content": SUBMIT_NOW})
                 continue
             for c in calls:
                 name, raw = c["function"]["name"], c["function"].get("arguments") or "{}"
@@ -360,6 +367,12 @@ def review(a, diff, work, sb, top):
                 messages.append({"role": "tool", "tool_call_id": c["id"], "content": result})
             if findings is not None:
                 break
+            # Turns are running out and no review was submitted: some models keep running checks forever.
+            # Tell them to wrap up, so the run ends with a verdict instead of "no valid submit_review".
+            left = a.max_turns - turn - 1
+            if not wrapped and left <= WRAP_UP_TURNS:
+                wrapped = True
+                messages.append({"role": "user", "content": WRAP_UP.format(left=left)})
         if findings is None:
             raise Incomplete(f"no valid submit_review within {a.max_turns} turns")
     except Exception as e:

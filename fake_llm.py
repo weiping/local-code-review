@@ -94,6 +94,8 @@ S = {
     "clean": [[("submit_review", {"findings": []})]],
     "unconfirmed": [[("submit_review", {"findings": [GOOD[4] | {"severity": "high"}]})]],
     "silent": [],
+    # A model that never stops running checks: it only submits when told to wrap up.
+    "late-submit": [[("run_shell", {"command": "echo still checking"})] for _ in range(40)],
     "network": [[("run_shell", {"command": NET})], [("submit_review", {"findings": []})]],
     "timeout": [[("run_shell", {"command": "sleep 301 & sleep 302; echo not-reached"})],
                 [("submit_review", {"findings": []})]],
@@ -120,6 +122,10 @@ class Handler(BaseHTTPRequestHandler):
             log.flush()
         script, i = S[name], turn["n"]
         turn["n"] += 1
+        if name == "late-submit":
+            asked = any(m.get("role") == "user" and "turns left" in str(m.get("content", "")) for m in body["messages"])
+            if asked:
+                script, i = [[("submit_review", {"findings": []})]], 0
         calls = [{"id": f"call_{i}_{k}", "type": "function",
                   "function": {"name": tool, "arguments": json.dumps(args)}}
                  for k, (tool, args) in enumerate(script[i] if i < len(script) else [])]

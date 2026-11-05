@@ -70,6 +70,8 @@ python3 /path/to/review.py --model <提供方/模型名> --context tests/test_or
 
 退出码：0 表示通过；1 表示有阻断级发现（默认只算 `confirmed=true` 且 severity 为 high 的）；2 表示没有完成，包括 git、srt、网络等各类错误，以及收到 SIGTERM（退出前会停掉正在跑的沙箱命令，并删掉临时目录）。
 
+轮数用尽前会提醒模型收尾：只剩 3 轮时（`WRAP_UP_TURNS`）插一句「停止再查，现在调用 submit_review」。没有这一步，有些模型会把 20 轮全花在跑检查上，最后既没结论也没退出码（实测 `deepseek-v4-pro`、`auto/glm-5.3`、`auto/minimax-m3` 都会这样）。代价是模型也可能用一份空 findings 交卷——那表示「没发现问题」而不是「没审完」，两者的区别要看报告里的轮数（`realmodel/analyze.py` 会统计 `run_shell` 次数和轮数）。
+
 已知限制：
 
 - 补丁不进沙箱，模型只能针对原始代码做检查；补丁对不对，要在 `--apply` 之后用你自己的测试验证。
@@ -114,6 +116,8 @@ python3 /path/to/review.py --model <提供方/模型名> --context tests/test_or
 ## 模型选型（18 个模型实测）
 
 两个基准场景各跑一次（`--max-turns 20`，n=1 每格，数字作指示性参考）：
+
+> 表里的「❌ 跑满 20 轮不交卷」是加收尾提醒**之前**的结果。这些模型现在会被提醒交卷，但交卷质量仍需自己判断（空 findings 还是真结论，看报告里的轮数）。
 
 - **场景 A**：本仓库的配置/工作流 diff（5 个文件，`--no-sandbox`）——这类没有代码可跑的 diff 最容易让推理模型陷入死循环翻目录。
 - **场景 B**：`fixtures/make_repo.sh` 的 5-bug 基准仓库（srt 沙箱、`--context tests/test_orders.py`、`--apply`），补丁由 `realmodel/oracle.py` 在宿主机逐一验证。

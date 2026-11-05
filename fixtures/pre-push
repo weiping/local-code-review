@@ -11,7 +11,7 @@ while read -r lref lsha rref rsha; do
   else
     base=$rsha
   fi
-  python3 -I review.py --model "$AI_REVIEW_MODEL" --base "$base" --head "$lsha" \
+  python3 -I review.py --model "$AI_REVIEW_MODEL" --max-turns 20 --base "$base" --head "$lsha" \
     ${AI_REVIEW_CONTEXT:+--context $AI_REVIEW_CONTEXT} </dev/null
   rc=$?
   if [ "$rc" -eq 2 ] && [ "${AI_REVIEW_ON_INCOMPLETE:-block}" = warn ]; then

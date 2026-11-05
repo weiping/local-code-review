@@ -55,7 +55,7 @@ jobs:
         run: |
           set +e
           python3 -I "$RUNNER_TEMP/review.py" --no-sandbox --model "$AI_REVIEW_MODEL" \
-            --base "$BASE" --head "$HEAD" --output "$RUNNER_TEMP/ai-review.json"
+            --max-turns 20 --base "$BASE" --head "$HEAD" --output "$RUNNER_TEMP/ai-review.json"
           rc=$?
           python3 -c 'import json, sys; d = json.load(open(sys.argv[1])); open(sys.argv[2], "w").write("".join(p["diff"] for p in d.get("patches", [])))' \
             "$RUNNER_TEMP/ai-review.json" "$RUNNER_TEMP/ai-review.patch" 2>/dev/null
