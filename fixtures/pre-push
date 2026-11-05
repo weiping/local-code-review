@@ -1,5 +1,7 @@
 #!/bin/sh
 # AI review before every push. Needs AI_REVIEW_MODEL; AI_REVIEW_CONTEXT and AI_REVIEW_ON_INCOMPLETE are optional.
+# git runs hooks from the repo root, so a .env there is picked up automatically.
+[ -f .env ] && . ./.env
 zero=0000000000000000000000000000000000000000
 status=0
 while read -r lref lsha rref rsha; do
