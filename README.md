@@ -77,6 +77,19 @@ python3 /path/to/review.py --model <提供方/模型名> --context tests/test_or
 - Linux 上的 srt 只在一个 Debian 13 容器里测过（容器允许无特权用户命名空间，不需要 `--nested-sandbox`），没在 Ubuntu 和实体机上测过；Windows 没有测过。
 - Linux 上 srt 会在每个禁读的目录（如 `/tmp`）上盖一层空的 tmpfs，沙箱里往那里写会成功，但写进的是这层 tmpfs，命令结束就没了，碰不到真实文件。macOS 上则直接拒绝。
 
+## 为什么补丁用 old_str/new_str 而不是 OpenAI 的 apply_patch（V4A）
+
+[apply_patch](https://developers.openai.com/api/docs/guides/tools-apply-patch)（V4A diff 格式）只对 OpenAI 自家 GPT-5/6 系模型开放内置工具；用 kimi/glm 时把它降级成普通 function tool，模型 emitting 的 V4A 文本不经过训练，实测不可靠。同一组编辑任务、两种工具风格、每格跑 6 次（kimi `k3.1-pro` 与 GLM-5.3，共 132 次真实调用）：
+
+| 工具风格 | 单 hunk | 同文件两处分离修改 | 建新文件+改文件 | 3 个相同方法体只改指定一个 |
+| --- | --- | --- | --- | --- |
+| `edit_file`（old_str/new_str，现状） | 12/12 | 12/12 | 11/12 | **24/24** |
+| `apply_patch`（V4A 文本） | 12/12 | **1/12** | 8/12 | **12/24（全部静默改错）** |
+
+V4A 的失败机制（拆了全部静默改错样本）：模型幻觉上下文行（把真实签名 `def reset(self):` 写成 `def reset(self, ms):`）→ V4A 参考实现的模糊锚定（相似度 ≥0.9 即命中）容忍了这行 → `class ClientA:` 与 `class ClientB:` 相似度 0.93 也过阈，搜索从文件头开始，于是锚到第一个同名块 → 改错位置，而工具返回 "applied successfully"，模型零纠错机会。锚定正确性甚至取决于类名字符距离（`UDPClient` vs `TCPClient` 差得够多就侥幸不误锚）。
+
+反过来，`edit_file` 的唯一性检查（`old_str` 出现 0 次或多次就报错退回模型）把同样的幻觉变成响亮、可重试的错误；两个模型在歧义场景里 24/24 都主动把类名写进 old_str 一次命中，报错重试是保底而非依赖。换 V4A 只有在审查模型换成 OpenAI 系时才值得重议。
+
 ## CI
 
 CI 用 GitHub 托管的 `ubuntu-latest`，不装 srt：每个 job 都是一台新开、用完即销毁的虚拟机，job 里只有只读的 `GITHUB_TOKEN`，所以 `review.py` 用 `--no-sandbox` 直接在 runner 上跑命令。只有 srt 才成立的限制类用例在本机的 `bash run_demo.sh` 里测。
