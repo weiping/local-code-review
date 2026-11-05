@@ -21,9 +21,9 @@
 | `demo-results-macos-no-sandbox.txt` | 同一台 Mac 上 `run_demo.sh no-sandbox` 的输出（CI 用的模式） |
 | `demo-results-linux-srt.txt` | Debian 13 容器（内核 6.12，x86_64，bubblewrap 0.12.0）上 `run_demo.sh` 的完整输出，Python 3.13.5 |
 | `.github/workflows/demo.yml` | 本仓库的 CI：在 GitHub 托管的 `ubuntu-latest` 上用假模型跑 `run_demo.sh no-sandbox`，再用 act 跑 `ci/run_ci_demo.sh`。不装 srt，不用 secret，不调真实模型 |
-| `.github/workflows/ai-review.yml` | 本仓库已启用的 PR 真审查：直连智谱 GLM-5.3（需配 `vars`/`secrets`），`--no-sandbox`，只审同仓库 PR，脚本取自基准提交的根目录 `review.py`。有阻断发现（退出码 1）时 job 失败；模型没给出结论（退出码 2）只记警告，不挡合并，与本机 `AI_REVIEW_ON_INCOMPLETE=warn` 一致 |
+| `.github/workflows/ai-review.yml` | 本仓库已启用的 PR 真审查：直连智谱 GLM-5.3（需配 `vars`/`secrets`），`--no-sandbox`，只审同仓库 PR，脚本取自基准提交的根目录 `review.py`。有阻断发现（退出码 1）时 job 失败；模型跑了但没给结论（退出码 2，报告里有 assistant 回合）只记警告，不挡合并，与本机 `AI_REVIEW_ON_INCOMPLETE=warn` 一致；退出码 2 但没有 assistant 回合（密钥、地址、模型名或 git 出错）仍判失败，避免审查被悄悄关掉 |
 | `ci/ai-review.yml` | 给其他仓库拷贝的 portable 模板（约定 `tools/review.py`）；本仓库的 live 副本在 `.github/workflows/ai-review.yml` |
-| `ci/run_ci_demo.sh` | 用 act 在本机按 `pull_request` 事件跑这个 workflow 的 7 项检查 |
+| `ci/run_ci_demo.sh` | 用 act 在本机按 `pull_request` 事件跑这个 workflow 的 8 项检查 |
 | `archive/v1-docker/` | 上一版脚本（docker/podman/bwrap 后端）的测试记录，只作对照 |
 
 ## 前置条件

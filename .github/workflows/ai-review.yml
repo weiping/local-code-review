@@ -63,10 +63,15 @@ jobs:
           case $rc in
             0) echo "AI review passed" ;;
             1) echo "::error title=AI review::blocking findings, see the ai-review artifact"; exit 1 ;;
-            # exit 2 means the review did not finish (the model wandered off, or the endpoint failed) - not a
-            # finding. Only confirmed blocking findings (exit 1) may fail the job; an unconverged model must not
-            # gate every PR. The config step above still fails loudly on a missing endpoint or key.
-            2) echo "::warning title=AI review incomplete::exit 2 (the model did not conclude), see the ai-review artifact"; exit 0 ;;
+            # exit 2 is "did not finish", and it covers both a model that never concluded and an
+            # infrastructure failure (rejected key, unreachable endpoint, missing review.py). Only forgive
+            # the first one: the report holds the model's own messages, so it says whether the model ran.
+            # A bad key or a dead endpoint leaves no assistant turn behind and must fail the job.
+            2) if python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); sys.exit(0 if any(m.get("role")=="assistant" for m in d.get("messages",[])) else 1)' "$RUNNER_TEMP/ai-review.json" 2>/dev/null; then
+                 echo "::warning title=AI review incomplete::the model did not conclude; not blocking, see the ai-review artifact"
+               else
+                 echo "::error title=AI review failed::exit 2 before the model ran (endpoint, key or review.py problem)"; exit 2
+               fi ;;
             *) echo "::error title=AI review failed::exit $rc"; exit "$rc" ;;
           esac
       - name: Upload report and suggested patches

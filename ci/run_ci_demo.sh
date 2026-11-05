@@ -42,7 +42,8 @@ run() { # name branch scenario expected(pass|fail) grep-pattern [base_url] [head
 
 run buggy-pr     buggy    full  fail "::error title=AI review::blocking findings"
 run clean-pr     clean    clean pass "AI review passed"
-run config-error clean    clean fail "::error title=AI review incomplete::exit 2" "http://127.0.0.1:9/v1"
+run config-error clean    clean fail "::error title=AI review failed::exit 2 before the model ran" "http://127.0.0.1:9/v1"
+run unconverged  clean    silent pass "::warning title=AI review incomplete::the model did not conclude"
 run tampered-pr  tampered full  fail "::error title=AI review::blocking findings"
 run fork-pr      buggy    full  pass "!Review base...head" "" "someone/fork"   # job skipped by its if:
 # the buggy PR must have uploaded the report and the suggested patch
