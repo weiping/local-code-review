@@ -78,18 +78,36 @@ python3 /path/to/review.py --model <提供方/模型名> --context tests/test_or
 - Linux 上的 srt 只在一个 Debian 13 容器里测过（容器允许无特权用户命名空间，不需要 `--nested-sandbox`），没在 Ubuntu 和实体机上测过；Windows 没有测过。
 - Linux 上 srt 会在每个禁读的目录（如 `/tmp`）上盖一层空的 tmpfs，沙箱里往那里写会成功，但写进的是这层 tmpfs，命令结束就没了，碰不到真实文件。macOS 上则直接拒绝。
 
-## 为什么补丁用 old_str/new_str 而不是 OpenAI 的 apply_patch（V4A）
+## V4A（apply_patch）与 old_str/new_str 的编辑准确度对比
 
-[apply_patch](https://developers.openai.com/api/docs/guides/tools-apply-patch)（V4A diff 格式）只对 OpenAI 自家 GPT-5/6 系模型开放内置工具；用 kimi/glm 时把它降级成普通 function tool，模型 emitting 的 V4A 文本不经过训练，实测不可靠。同一组编辑任务、两种工具风格、每格跑 6 次（kimi `k3.1-pro` 与 GLM-5.3，共 132 次真实调用）：
+[apply_patch](https://developers.openai.com/api/docs/guides/tools-apply-patch)（V4A diff 格式）的内置工具只对 OpenAI 自家 GPT-5/6 系模型开放；kimi/glm 等非 OpenAI 模型只能把它降级为普通 function tool 或纯文本协议。我们用两轮评测实测了两种格式在非 OpenAI 模型上的编辑准确度。
 
-| 工具风格 | 单 hunk | 同文件两处分离修改 | 建新文件+改文件 | 3 个相同方法体只改指定一个 |
-| --- | --- | --- | --- | --- |
-| `edit_file`（old_str/new_str，现状） | 12/12 | 12/12 | 11/12 | **24/24** |
-| `apply_patch`（V4A 文本） | 12/12 | **1/12** | 8/12 | **12/24（全部静默改错）** |
+### 第一轮：手写模糊匹配器（已推翻）
 
-V4A 的失败机制（拆了全部静默改错样本）：模型幻觉上下文行（把真实签名 `def reset(self):` 写成 `def reset(self, ms):`）→ V4A 参考实现的模糊锚定（相似度 ≥0.9 即命中）容忍了这行 → `class ClientA:` 与 `class ClientB:` 相似度 0.93 也过阈，搜索从文件头开始，于是锚到第一个同名块 → 改错位置，而工具返回 "applied successfully"，模型零纠错机会。锚定正确性甚至取决于类名字符距离（`UDPClient` vs `TCPClient` 差得够多就侥幸不误锚）。
+最初用自写的"相似度 ≥0.9 模糊匹配"解析器测得 V4A 大量静默改错（改错位置但工具报成功），后来发现那是解析器的 bug，不是 V4A 的：OpenAI 官方实现（openai-agents-python 的 `apply_diff.py`）对上下文行做**精确 → rstrip → strip** 三级匹配，幻觉上下文会响亮报错 `Invalid Context`，不会静默通过。
 
-反过来，`edit_file` 的唯一性检查（`old_str` 出现 0 次或多次就报错退回模型）把同样的幻觉变成响亮、可重试的错误；两个模型在歧义场景里 24/24 都主动把类名写进 old_str 一次命中，报错重试是保底而非依赖。换 V4A 只有在审查模型换成 OpenAI 系时才值得重议。
+### 第二轮：官方解析器 + 三协议配对实验
+
+搭了配对实验（固定模型 `kimi-code-cn/k3.1-pro`，同一题同一初始文件，两种格式各跑一遍），在 Magpie 网关的三种 API 协议下测试。执行器：V4A = 严格外层文法 + 官方 `apply_diff.py`；SEARCH/REPLACE = 严格执行器（逐字匹配、恰好一次、失败回滚）。每格跑 3 次，最多一次修正。
+
+**12 道题**分五类：简单局部修改 ×3、重复代码中指定修改 ×3、缩进/空行/EOF ×3、单文件多处 ×2、跨两文件 ×1。每题都验证初始代码失败、参考实现通过。
+
+| API 协议 | 格式 | 纯文本阶段首次/最终 | 工具调用阶段首次/最终 |
+| --- | --- | --- | --- |
+| OpenAI Chat Completions | SEARCH/REPLACE | **100% / 100%** | 71% / **100%** |
+| | V4A | **100% / 100%** | 46% / 92% |
+| OpenAI Responses | SEARCH/REPLACE | **100% / 100%** | 79% / **100%** |
+| | V4A | **100% / 100%** | 46% / 88% |
+| Anthropic Messages | SEARCH/REPLACE | **100% / 100%** | 71% / **100%** |
+| | V4A | **100% / 100%** | 63% / 100% |
+
+**结论**：
+
+1. **纯文本阶段 V4A 与 SR 完全打平**（三协议均 100%）：官方解析器对幻觉上下文会响亮报错，不再静默改错。两种格式都能准确表达编辑。
+2. **工具调用阶段的瓶颈是协议合规**（模型把合法补丁写成纯文本而不调工具），不是格式本身。V4A 比 SR 更容易犯这个错（首次合规率 46% vs 71%），重试一次后大多修复。
+3. **SEARCH/REPLACE 的唯一性检查**（`old_str` 出现 0 次或多次就报错退回模型）把歧义变成响亮、可重试的错误，模型在重复代码场景 24/24 全对。
+
+**为什么不换 V4A**：纯文本阶段无差异，工具调用阶段 SR 首次合规率更高、重试更少；且 OpenAI 系模型的内置 V4A 工具在 Magpie 网关上无法使用（只对 OpenAI 官方 API 开放）。现有 `edit_file` + `create_file` + `delete_file` 保持不变。若审查模型换成 OpenAI 系且直连 OpenAI API，内置 apply_patch 才值得重议。
 
 ## 模型选型（18 个模型实测）
 
