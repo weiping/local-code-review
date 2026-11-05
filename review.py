@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """AI code review with a sandbox that can run code. Exit 0: pass, 1: blocking findings, 2: incomplete or error."""
-import argparse, difflib, json, os, re, shlex, shutil, signal, subprocess, sys, tempfile, time, urllib.request
+import argparse, difflib, json, os, re, shlex, shutil, signal, subprocess, sys, tempfile, time, urllib.error, urllib.request
 from pathlib import Path
 
 BASE = os.environ.get("LLM_BASE_URL", "http://127.0.0.1:3425/v1")  # Magpie's local gateway; any OpenAI-compatible URL works
@@ -287,13 +287,21 @@ def review(a, diff, work, sb, top):
     messages = [{"role": "system", "content": PROMPT.format(lang=a.lang, inline=" and below" if a.inline else "")},
                 {"role": "user", "content": first}]
     originals, findings, tokens, nudges, start = {}, None, 0, 0, time.time()
+    temp = 0
     try:
         for _ in range(a.max_turns):
+            body = {"model": a.model, "messages": messages, "tools": TOOLS, "temperature": temp}
             try:
-                res = chat({"model": a.model, "messages": messages, "tools": TOOLS, "temperature": 0})
+                res = chat(body)
+            except urllib.error.HTTPError as e:
+                # Some endpoints accept only one temperature (Kimi: 1) and reject the rest.
+                if e.code == 400 and temp != 1 and b"temperature" in e.read():
+                    temp = 1
+                    continue
+                raise
             except Exception:  # a dropped connection or a busy server: wait and retry once
                 time.sleep(5)
-                res = chat({"model": a.model, "messages": messages, "tools": TOOLS, "temperature": 0})
+                res = chat(body)
             tokens += (res.get("usage") or {}).get("total_tokens", 0)
             msg = res["choices"][0]["message"]
             calls = msg.get("tool_calls") or []

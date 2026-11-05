@@ -21,7 +21,7 @@
 | `demo-results-macos-no-sandbox.txt` | 同一台 Mac 上 `run_demo.sh no-sandbox` 的输出（CI 用的模式） |
 | `demo-results-linux-srt.txt` | Debian 13 容器（内核 6.12，x86_64，bubblewrap 0.12.0）上 `run_demo.sh` 的完整输出，Python 3.13.5 |
 | `.github/workflows/demo.yml` | 本仓库的 CI：在 GitHub 托管的 `ubuntu-latest` 上用假模型跑 `run_demo.sh no-sandbox`，再用 act 跑 `ci/run_ci_demo.sh`。不装 srt，不用 secret，不调真实模型 |
-| `.github/workflows/ai-review.yml` | 本仓库已启用的 PR 真审查：直连智谱 GLM-5.3（需配 `vars`/`secrets`），`--no-sandbox`，只审同仓库 PR，脚本取自基准提交的根目录 `review.py`。有阻断发现（退出码 1）时 job 失败；模型跑了但没给结论（退出码 2，报告里有 assistant 回合）只记警告，不挡合并，与本机 `AI_REVIEW_ON_INCOMPLETE=warn` 一致；退出码 2 但没有 assistant 回合（密钥、地址、模型名或 git 出错）仍判失败，避免审查被悄悄关掉 |
+| `.github/workflows/ai-review.yml` | 本仓库已启用的 PR 真审查：直连 Kimi K3.1 Pro（需配 `vars`/`secrets`），`--no-sandbox`，只审同仓库 PR，脚本取自基准提交的根目录 `review.py`。有阻断发现（退出码 1）或审查未完成（退出码 2）时 job 失败 |
 | `ci/ai-review.yml` | 给其他仓库拷贝的 portable 模板（约定 `tools/review.py`）；本仓库的 live 副本在 `.github/workflows/ai-review.yml` |
 | `ci/run_ci_demo.sh` | 用 act 在本机按 `pull_request` 事件跑这个 workflow 的 8 项检查 |
 | `archive/v1-docker/` | 上一版脚本（docker/podman/bwrap 后端）的测试记录，只作对照 |
@@ -84,12 +84,14 @@ CI 用 GitHub 托管的 `ubuntu-latest`，不装 srt：每个 job 都是一台�
 
 真实审查需要 OpenAI 兼容且支持 `tool_calls` 的地址。官方文档里 GitHub Copilot 接入 Actions 的方式是 Copilot CLI（或 Agentic Workflows / Copilot SDK）：prompt 进、文本或 agent 出，**不是**给自定义脚本用的 `/v1/chat/completions` + 多轮 `tool_calls`，因此不能满足本仓库的 `review.py`。GitHub Models 也已于 2026-07-30 退役。见 [Using Copilot CLI in GitHub Actions](https://docs.github.com/en/copilot/how-tos/copilot-cli/use-copilot-cli-in-actions)、[Server-to-server authentication](https://docs.github.com/en/copilot/how-tos/copilot-sdk/auth/server-to-server-tokens)。
 
-CI 改为直连智谱 [GLM-5.3](https://docs.bigmodel.cn/cn/guide/models/text/glm-5.3) 的 OpenAI 兼容接口（[文档](https://docs.bigmodel.cn/cn/guide/develop/openai/introduction)）：
+CI 改为直连 [Kimi K3.1 Pro](https://www.kimi.com/code) 的 OpenAI 兼容接口：
 
 | 配置 | 值 |
 | --- | --- |
-| `vars.LLM_BASE_URL` | `https://open.bigmodel.cn/api/paas/v4` |
-| `vars.AI_REVIEW_MODEL` | `glm-5.3` |
-| `secrets.LLM_API_KEY` | 智谱开放平台 API Key |
+| `vars.LLM_BASE_URL` | `https://api.kimi.com/coding/v1` |
+| `vars.AI_REVIEW_MODEL` | `k3.1-pro` |
+| `secrets.LLM_API_KEY` | Kimi Code 套餐 Key（`sk-k…`） |
 
-本仓库已启用 `.github/workflows/ai-review.yml`（读根目录 `review.py`）。其他仓库仍按模板：拷 `ci/ai-review.yml` 到 `.github/workflows/ai-review.yml`，并把 `review.py` 放到 `tools/review.py`。`--no-sandbox` 下模型的命令能读到这个 job 能读的一切，包括进程里的模型密钥，也能联网；job 只给 `contents: read`。本机开发仍可用 Magpie（例如 `auto/glm-5.3`），与 CI 直连智谱互不冲突。
+实测：`k3.1-pro` 在同一份 diff 上 9 轮就调用了 `submit_review`（GLM-5.3 有时 20 轮跑完仍不提交）。
+
+本仓库已启用 `.github/workflows/ai-review.yml`（读根目录 `review.py`）。其他仓库仍按模板：拷 `ci/ai-review.yml` 到 `.github/workflows/ai-review.yml`，并把 `review.py` 放到 `tools/review.py`。`--no-sandbox` 下模型的命令能读到这个 job 能读的一切，包括进程里的模型密钥，也能联网；job 只给 `contents: read`。本机开发仍可用 Magpie（例如 `auto/glm-5.3`），与 CI 直连厂商互不冲突。
