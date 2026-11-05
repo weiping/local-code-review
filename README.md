@@ -18,6 +18,7 @@
 | `realmodel/run_real.sh`、`realmodel/oracle.py` | 真实模型实测：在示例仓库上跑 N 次，`--apply` 后用 oracle 在宿主机上逐一检查五个 bug 是否修好 |
 | `realmodel/analyze.py` | 从报告里统计 token、发现，以及 `run_shell` 里有几条真的执行了代码 |
 | `realmodel/results-srt-glm/`、`realmodel/results-srt-kimi/` | Mac mini M4 上经 Magpie 接入 `auto/glm-5.3`、`kimi-code-cn/k3.1-pro` 各跑 3 次的报告和汇总。云端模型，代码会发到服务商 |
+| `realmodel/results-convergence/summary.json` | 18 个模型在「本仓库配置类 diff」与「5-bug 基准仓库」两个场景上的收敛性跑分（n=1 每格），见下文「模型选型」 |
 | `demo-results-macos-srt.txt`、`demo-results-macos-srt-py39.txt` | macOS 27.2（Mac mini M4）上 `run_demo.sh` 的完整输出，`review.py` 分别用 Python 3.14.3 和系统自带的 3.9.6 运行 |
 | `demo-results-macos-no-sandbox.txt` | 同一台 Mac 上 `run_demo.sh no-sandbox` 的输出（CI 用的模式） |
 | `demo-results-linux-srt.txt` | Debian 13 容器（内核 6.12，x86_64，bubblewrap 0.12.0）上 `run_demo.sh` 的完整输出，Python 3.13.5 |
@@ -90,6 +91,49 @@ V4A 的失败机制（拆了全部静默改错样本）：模型幻觉上下文�
 
 反过来，`edit_file` 的唯一性检查（`old_str` 出现 0 次或多次就报错退回模型）把同样的幻觉变成响亮、可重试的错误；两个模型在歧义场景里 24/24 都主动把类名写进 old_str 一次命中，报错重试是保底而非依赖。换 V4A 只有在审查模型换成 OpenAI 系时才值得重议。
 
+## 模型选型（18 个模型实测）
+
+两个基准场景各跑一次（`--max-turns 20`，n=1 每格，数字作指示性参考）：
+
+- **场景 A**：本仓库的配置/工作流 diff（5 个文件，`--no-sandbox`）——这类没有代码可跑的 diff 最容易让推理模型陷入死循环翻目录。
+- **场景 B**：`fixtures/make_repo.sh` 的 5-bug 基准仓库（srt 沙箱、`--context tests/test_orders.py`、`--apply`），补丁由 `realmodel/oracle.py` 在宿主机逐一验证。
+
+| 模型（Magpie id） | 场景 A | 场景 B | tokens (A+B) | 耗时 (A+B) |
+| --- | --- | --- | --- | --- |
+| `anthropic/claude-opus-5-5` | ✅ 5 轮，1 条 confirmed high，带补丁 | ✅ 4 轮，5 条 confirmed，oracle **5/5** | 61k | 63s |
+| `auto/gemini-4-argon` | ✅ 4 轮，判定通过 | ✅ 7 轮，4 条 confirmed，oracle **5/5** | 55k | 124s |
+| `auto/gpt-6.1-terra` | ✅ 7 轮，1 条 confirmed high，带补丁 | ✅ 8 轮，6 条 confirmed，oracle **5/5** | 111k | 339s |
+| `kimi-code-cn/k3.1-pro` | ✅ 9 轮，1 条 confirmed high | ✅ 8 轮，5 条 confirmed，oracle **5/5** | 168k | 465s |
+| `kimi-code-cn/kimi-for-coding`（K2.8） | ✅ 11 轮，判定通过 | ✅ 8 轮，5 条 confirmed，oracle **5/5** | 136k | 362s |
+| `auto/grok-4.7` | ⚠️ 第 20 轮踩线交卷，2 条 confirmed high | ✅ 10 轮，5 条 confirmed，oracle **5/5** | 667k | 502s |
+| `auto/glm-5.3` | ❌ 跑满 20 轮不交卷 | ✅ 10 轮，4 条 confirmed，oracle **5/5** | 314k | 940s |
+| `auto/glm-5.3-flash` | ❌ 跑满 20 轮不交卷 | ✅ 11 轮，5 条 confirmed，oracle **5/5** | 373k | 1060s |
+| `auto/minimax-m3` | ❌ 跑满 20 轮不交卷 | ✅ 15 轮，6 条 confirmed，oracle **5/5** | 977k | 445s |
+| `qoder-cn/qfmodel`（Qwen3.8-Flash） | ❌ 网关 >900s 无响应 | ✅ 17 轮，6 条 confirmed，oracle **5/5** | 140k | 452s+ |
+| `anthropic/claude-sonnet-5-5` | ✅ 2 轮，1 条 unconfirmed | ⚠️ 4 轮，4 条 confirmed 但**不调 edit_file**（0/5） | 26k | 36s |
+| `anthropic/claude-haiku-5-5` | ✅ 4 轮，1 条 confirmed medium | ⚠️ 7 轮，4 条 confirmed 但**不调 edit_file**（0/5） | 75k | 58s |
+| `auto/gpt-6-luna` | ✅ 6 轮，1 条 confirmed high | ⚠️ 6 轮，4 条 confirmed 但**不调 edit_file**（0/5） | 71k | 120s |
+| `cursor/composer-2.5` | ❌ 429 限流 | ⚠️ 6 轮，4 条 confirmed 但**不调 edit_file**（0/5） | 24k | 79s |
+| `auto/gemini-3.8-flash` | ✅ 12 轮，判定通过 | ❌ 跑满 20 轮不交卷 | 175k | 104s |
+| `auto/deepseek-v4-pro` | ❌ 跑满 20 轮不交卷 | ❌ 跑满 20 轮不交卷 | 345k | 365s |
+| `deepseek/deepseek-flash`（V4.1-Flash） | ❌ 跑满 20 轮不交卷 | ❌ 跑满 20 轮不交卷（6 次 edit_file 但 0 次 submit） | 597k | 784s |
+| `qoder-cn/qmodel_38max`（Qwen3.8-Max） | ❌ 网关 >900s 无响应 | ❌ 跑满 20 轮不交卷 | 176k | 793s+ |
+| `auto/claude-sonnet-5-5`、`auto/claude-opus-5-5` | — | — | — | ⚠️ 这两个自定义路由组未包含 `anthropic/...` 成员：opus 会 429（Cursor/Antigravity 配额耗尽），sonnet 走 Cursor/Copilot 时表现为 2～3 轮过快交卷、0 confirmed |
+
+三个行为模式：
+
+1. **收敛 ≠ 修好**。Claude Sonnet/Haiku、GPT-6 Luna、Composer 2.5 交卷很快（2～7 轮），也真跑代码实锤了 bug，但常常漏调 `edit_file` 给补丁——作门禁（只看 findings）没问题，`--apply` 自动修复时会漏。
+2. **DeepSeek 全系不写 `submit_review`**：V4-Pro 把 5 个 bug 各写了验证脚本反复测，就是一直不交卷；V4.1-Flash 连补丁都写了 6 份也不交卷。
+3. **配置/文档类 diff 是照妖镜**：GLM-5.3、GLM-5.3-Flash、MiniMax-M3 遇到没有代码可跑的 diff 会反复翻目录到 20 轮烧完（MiniMax-M3 单次 74 万 tokens）。
+
+**选型建议**：
+
+- **本机（经 Magpie）**：首选 `kimi-code-cn/k3.1-pro`（本仓库 `.env` 的现值）；要更快更省换 `kimi-code-cn/kimi-for-coding`（K2.8，5/5 全修且 tokens 最省）；要质量上限用 `anthropic/claude-opus-5-5`（4～5 轮、15～45k tokens、5/5 全修，但烧 Anthropic API 余额）；`auto/gemini-4-argon`、`auto/gpt-6-1-terra` 也是可靠备选。
+- **CI（需静态 key + OpenAI 兼容端点）**：只有 Kimi Code 端点同时满足「直连 + 稳定收敛」，即现配置 `k3.1-pro` @ `https://api.kimi.com/coding/v1`；同端点把 `vars.AI_REVIEW_MODEL` 换成 `kimi-for-coding` 可再省一半 token。其余渠道（Copilot/Cursor/Anthropic 账号）走 OAuth 登录态，CI 里用不了。
+- **别用**：`auto/deepseek-*` 全系（不调 `submit_review`）、Qoder CN 渠道（网关延迟高到超时）、以及场景 A 会发散的模型作 CI 门禁（glm-5.3 系、minimax-m3）。
+
+原始逐轮数据在 `realmodel/results-convergence/summary.json`（每个模型含轮数、各工具调用次数、token、耗时、oracle 明细）。
+
 ## CI
 
 CI 用 GitHub 托管的 `ubuntu-latest`，不装 srt：每个 job 都是一台新开、用完即销毁的虚拟机，job 里只有只读的 `GITHUB_TOKEN`，所以 `review.py` 用 `--no-sandbox` 直接在 runner 上跑命令。只有 srt 才成立的限制类用例在本机的 `bash run_demo.sh` 里测。
@@ -106,7 +150,7 @@ CI 改为直连 [Kimi K3.1 Pro](https://www.kimi.com/code) 的 OpenAI 兼容接�
 | `vars.AI_REVIEW_MODEL` | `k3.1-pro` |
 | `secrets.LLM_API_KEY` | Kimi Code 套餐 Key（`sk-k…`） |
 
-实测（同一份 diff，`--no-sandbox`）：`k3.1-pro` 3～11 轮就调用 `submit_review`；GLM-5.3 和 `auto/kimi-k3` 都 20 轮跑满不提交（各烧 26～31 万 tokens）。
+多模型收敛性对比见上文「模型选型」：同为 Kimi Code 端点的 `kimi-for-coding`（K2.8）也 5/5 修好基准 bug 且 tokens 最省；GLM-5.3、`auto/kimi-k3` 遇到没有代码可跑的 diff 会 20 轮跑满不提交。
 
 模型兼容：有的端点只接受一个 temperature（Kimi 只收 1），`review.py` 遇到 400 且报文提到 temperature 会自动改用 1 重试该轮。
 

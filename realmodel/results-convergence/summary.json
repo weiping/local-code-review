@@ -1,0 +1,861 @@
+{
+  "benchmark": "review.py convergence & quality, --max-turns 20, one run per cell (n=1, indicative)",
+  "scenes": {
+    "SceneA_PR_diff": "this repo's PR diff 94210ee..73d2f35 (config/workflow change), --no-sandbox, review.py at 4ec4f5d",
+    "SceneB_5bug_srt": "fixtures/make_repo.sh five planted bugs, srt sandbox, --context tests/test_orders.py --apply, oracle.py on the host"
+  },
+  "run_on": "Mac mini M4 via Magpie gateway http://127.0.0.1:3425/v1, 2026-11-05",
+  "runs": [
+    {
+      "model": "auto/claude-opus-5-5",
+      "SceneA_PR_diff": {
+        "exit": 2,
+        "seconds": 8.1,
+        "converged": false,
+        "turns": 0,
+        "submit_review_calls": 0,
+        "tool_calls": {},
+        "findings": 0,
+        "blocking": 0,
+        "patches": 0,
+        "tokens": 0,
+        "error": "HTTP Error 429: Too Many Requests"
+      },
+      "SceneB_5bug_srt": {
+        "exit": 2,
+        "seconds": 9.3,
+        "converged": false,
+        "turns": 0,
+        "submit_review_calls": 0,
+        "tool_calls": {},
+        "findings": 0,
+        "blocking": 0,
+        "patches": 0,
+        "tokens": 0,
+        "error": "HTTP Error 429: Too Many Requests"
+      },
+      "batch": "batch1"
+    },
+    {
+      "model": "auto/claude-sonnet-5-5",
+      "SceneB_5bug_srt": {
+        "exit": 0,
+        "seconds": 8.5,
+        "converged": true,
+        "turns": 2,
+        "submit_review_calls": 1,
+        "tool_calls": {
+          "run_shell": 1,
+          "submit_review": 1
+        },
+        "findings": 6,
+        "blocking": 0,
+        "patches": 0,
+        "tokens": 5843,
+        "error": null,
+        "oracle_fixed": "?"
+      },
+      "SceneA_PR_diff": {
+        "exit": 0,
+        "seconds": 9.2,
+        "converged": true,
+        "turns": 3,
+        "submit_review_calls": 1,
+        "tool_calls": {
+          "run_shell": 2,
+          "submit_review": 1
+        },
+        "findings": 1,
+        "blocking": 0,
+        "patches": 0,
+        "tokens": 18935,
+        "error": null
+      },
+      "batch": "batch1"
+    },
+    {
+      "model": "auto/deepseek-v4-pro",
+      "SceneB_5bug_srt": {
+        "exit": 2,
+        "seconds": 94.1,
+        "converged": false,
+        "turns": 20,
+        "submit_review_calls": 0,
+        "tool_calls": {
+          "run_shell": 20
+        },
+        "findings": 0,
+        "blocking": 0,
+        "patches": 0,
+        "tokens": 98612,
+        "error": "no valid submit_review within 20 turns"
+      },
+      "SceneA_PR_diff": {
+        "exit": 2,
+        "seconds": 270.7,
+        "converged": false,
+        "turns": 20,
+        "submit_review_calls": 0,
+        "tool_calls": {
+          "run_shell": 23
+        },
+        "findings": 0,
+        "blocking": 0,
+        "patches": 0,
+        "tokens": 246889,
+        "error": "no valid submit_review within 20 turns"
+      },
+      "batch": "batch1"
+    },
+    {
+      "model": "auto/glm-5.3",
+      "SceneB_5bug_srt": {
+        "exit": 1,
+        "seconds": 132.2,
+        "converged": true,
+        "turns": 10,
+        "submit_review_calls": 1,
+        "tool_calls": {
+          "run_shell": 8,
+          "edit_file": 5,
+          "submit_review": 1
+        },
+        "findings": 6,
+        "blocking": 1,
+        "patches": 1,
+        "tokens": 45499,
+        "error": null,
+        "oracle_fixed": "?"
+      },
+      "SceneA_PR_diff": {
+        "exit": 2,
+        "seconds": 807.9,
+        "converged": false,
+        "turns": 20,
+        "submit_review_calls": 0,
+        "tool_calls": {
+          "run_shell": 26
+        },
+        "findings": 0,
+        "blocking": 0,
+        "patches": 0,
+        "tokens": 268686,
+        "error": "no valid submit_review within 20 turns"
+      },
+      "batch": "batch1"
+    },
+    {
+      "model": "kimi-code-cn/k3.1-pro",
+      "SceneB_5bug_srt": {
+        "exit": 1,
+        "seconds": 229.0,
+        "converged": true,
+        "turns": 8,
+        "submit_review_calls": 1,
+        "tool_calls": {
+          "run_shell": 5,
+          "edit_file": 5,
+          "submit_review": 1
+        },
+        "findings": 5,
+        "blocking": 2,
+        "patches": 1,
+        "tokens": 43529,
+        "error": null,
+        "oracle_fixed": "?"
+      },
+      "SceneA_PR_diff": {
+        "exit": 1,
+        "seconds": 235.4,
+        "converged": true,
+        "turns": 9,
+        "submit_review_calls": 1,
+        "tool_calls": {
+          "run_shell": 8,
+          "submit_review": 1
+        },
+        "findings": 1,
+        "blocking": 1,
+        "patches": 0,
+        "tokens": 124675,
+        "error": null
+      },
+      "batch": "batch1"
+    },
+    {
+      "model": "anthropic/claude-sonnet-5-5",
+      "SceneB_5bug_srt": {
+        "exit": 1,
+        "seconds": 24.7,
+        "converged": true,
+        "turns": 4,
+        "submit_review_calls": 1,
+        "tool_calls": {
+          "run_shell": 3,
+          "submit_review": 1
+        },
+        "ran_code": 2,
+        "findings": 7,
+        "confirmed_findings": 4,
+        "blocking": 3,
+        "patches": 0,
+        "tokens": 12801,
+        "error": null,
+        "oracle_fixed": "0/5",
+        "oracle_detail": {
+          "sql_injection": false,
+          "pagination": false,
+          "is_not": false,
+          "retry": false,
+          "conn_close": false
+        }
+      },
+      "SceneA_PR_diff": {
+        "exit": 0,
+        "seconds": 11.2,
+        "converged": true,
+        "turns": 2,
+        "submit_review_calls": 1,
+        "tool_calls": {
+          "run_shell": 1,
+          "submit_review": 1
+        },
+        "ran_code": 0,
+        "findings": 1,
+        "confirmed_findings": 0,
+        "blocking": 0,
+        "patches": 0,
+        "tokens": 13202,
+        "error": null
+      },
+      "batch": "batch2"
+    },
+    {
+      "model": "anthropic/claude-opus-5-5",
+      "SceneB_5bug_srt": {
+        "exit": 1,
+        "seconds": 24.7,
+        "converged": true,
+        "turns": 4,
+        "submit_review_calls": 1,
+        "tool_calls": {
+          "run_shell": 2,
+          "edit_file": 5,
+          "submit_review": 1
+        },
+        "ran_code": 1,
+        "findings": 6,
+        "confirmed_findings": 5,
+        "blocking": 2,
+        "patches": 1,
+        "tokens": 15657,
+        "error": null,
+        "oracle_fixed": "5/5",
+        "oracle_detail": {
+          "sql_injection": true,
+          "pagination": true,
+          "is_not": true,
+          "retry": true,
+          "conn_close": true
+        }
+      },
+      "SceneA_PR_diff": {
+        "exit": 1,
+        "seconds": 37.9,
+        "converged": true,
+        "turns": 5,
+        "submit_review_calls": 1,
+        "tool_calls": {
+          "run_shell": 3,
+          "edit_file": 2,
+          "submit_review": 1
+        },
+        "ran_code": 1,
+        "findings": 1,
+        "confirmed_findings": 1,
+        "blocking": 1,
+        "patches": 2,
+        "tokens": 44931,
+        "error": null
+      },
+      "batch": "batch2"
+    },
+    {
+      "model": "cursor/composer-2.5",
+      "SceneA_PR_diff": {
+        "exit": 2,
+        "seconds": 35.4,
+        "converged": false,
+        "turns": 1,
+        "submit_review_calls": 0,
+        "tool_calls": {
+          "run_shell": 1
+        },
+        "ran_code": 0,
+        "findings": 0,
+        "confirmed_findings": 0,
+        "blocking": 0,
+        "patches": 0,
+        "tokens": 0,
+        "error": "HTTP Error 429: Too Many Requests"
+      },
+      "SceneB_5bug_srt": {
+        "exit": 1,
+        "seconds": 79.3,
+        "converged": true,
+        "turns": 6,
+        "submit_review_calls": 1,
+        "tool_calls": {
+          "run_shell": 10,
+          "submit_review": 1
+        },
+        "ran_code": 8,
+        "findings": 5,
+        "confirmed_findings": 4,
+        "blocking": 1,
+        "patches": 0,
+        "tokens": 23605,
+        "error": null,
+        "oracle_fixed": "0/5",
+        "oracle_detail": {
+          "sql_injection": false,
+          "pagination": false,
+          "is_not": false,
+          "retry": false,
+          "conn_close": false
+        }
+      },
+      "batch": "batch2"
+    },
+    {
+      "model": "auto/gemini-4-argon",
+      "SceneA_PR_diff": {
+        "exit": 0,
+        "seconds": 42.4,
+        "converged": true,
+        "turns": 4,
+        "submit_review_calls": 1,
+        "tool_calls": {
+          "run_shell": 3,
+          "submit_review": 1
+        },
+        "ran_code": 1,
+        "findings": 0,
+        "confirmed_findings": 0,
+        "blocking": 0,
+        "patches": 0,
+        "tokens": 31830,
+        "error": null
+      },
+      "SceneB_5bug_srt": {
+        "exit": 1,
+        "seconds": 81.7,
+        "converged": true,
+        "turns": 7,
+        "submit_review_calls": 1,
+        "tool_calls": {
+          "run_shell": 5,
+          "edit_file": 1,
+          "submit_review": 1
+        },
+        "ran_code": 2,
+        "findings": 5,
+        "confirmed_findings": 4,
+        "blocking": 2,
+        "patches": 1,
+        "tokens": 23524,
+        "error": null,
+        "oracle_fixed": "5/5",
+        "oracle_detail": {
+          "sql_injection": true,
+          "pagination": true,
+          "is_not": true,
+          "retry": true,
+          "conn_close": true
+        }
+      },
+      "batch": "batch2"
+    },
+    {
+      "model": "auto/gpt-6-luna",
+      "SceneB_5bug_srt": {
+        "exit": 1,
+        "seconds": 50.4,
+        "converged": true,
+        "turns": 6,
+        "submit_review_calls": 1,
+        "tool_calls": {
+          "run_shell": 5,
+          "submit_review": 1
+        },
+        "ran_code": 3,
+        "findings": 4,
+        "confirmed_findings": 4,
+        "blocking": 1,
+        "patches": 0,
+        "tokens": 19928,
+        "error": null,
+        "oracle_fixed": "0/5",
+        "oracle_detail": {
+          "sql_injection": false,
+          "pagination": false,
+          "is_not": false,
+          "retry": false,
+          "conn_close": false
+        }
+      },
+      "SceneA_PR_diff": {
+        "exit": 1,
+        "seconds": 69.3,
+        "converged": true,
+        "turns": 6,
+        "submit_review_calls": 1,
+        "tool_calls": {
+          "run_shell": 5,
+          "submit_review": 1
+        },
+        "ran_code": 2,
+        "findings": 1,
+        "confirmed_findings": 1,
+        "blocking": 1,
+        "patches": 0,
+        "tokens": 50883,
+        "error": null
+      },
+      "batch": "batch2"
+    },
+    {
+      "model": "anthropic/claude-haiku-5-5",
+      "SceneB_5bug_srt": {
+        "exit": 1,
+        "seconds": 29.1,
+        "converged": true,
+        "turns": 7,
+        "submit_review_calls": 2,
+        "tool_calls": {
+          "run_shell": 5,
+          "submit_review": 2
+        },
+        "ran_code": 4,
+        "findings": 7,
+        "confirmed_findings": 4,
+        "blocking": 3,
+        "patches": 0,
+        "tokens": 35120,
+        "error": null,
+        "oracle_fixed": "0/5",
+        "oracle_detail": {
+          "sql_injection": false,
+          "pagination": false,
+          "is_not": false,
+          "retry": false,
+          "conn_close": false
+        }
+      },
+      "SceneA_PR_diff": {
+        "exit": 0,
+        "seconds": 29.0,
+        "converged": true,
+        "turns": 4,
+        "submit_review_calls": 1,
+        "tool_calls": {
+          "run_shell": 4,
+          "submit_review": 1
+        },
+        "ran_code": 1,
+        "findings": 1,
+        "confirmed_findings": 1,
+        "blocking": 0,
+        "patches": 0,
+        "tokens": 39561,
+        "error": null
+      },
+      "batch": "batch2"
+    },
+    {
+      "model": "auto/minimax-m3",
+      "SceneB_5bug_srt": {
+        "exit": 1,
+        "seconds": 178.8,
+        "converged": true,
+        "turns": 15,
+        "submit_review_calls": 1,
+        "tool_calls": {
+          "run_shell": 21,
+          "edit_file": 6,
+          "submit_review": 1
+        },
+        "ran_code": 15,
+        "findings": 6,
+        "confirmed_findings": 6,
+        "blocking": 2,
+        "patches": 2,
+        "tokens": 237880,
+        "error": null,
+        "oracle_fixed": "5/5",
+        "oracle_detail": {
+          "sql_injection": true,
+          "pagination": true,
+          "is_not": true,
+          "retry": true,
+          "conn_close": true
+        }
+      },
+      "SceneA_PR_diff": {
+        "exit": 2,
+        "seconds": 265.7,
+        "converged": false,
+        "turns": 20,
+        "submit_review_calls": 0,
+        "tool_calls": {
+          "run_shell": 32
+        },
+        "ran_code": 15,
+        "findings": 0,
+        "confirmed_findings": 0,
+        "blocking": 0,
+        "patches": 0,
+        "tokens": 739242,
+        "error": "no valid submit_review within 20 turns"
+      },
+      "batch": "batch2"
+    },
+    {
+      "model": "auto/grok-4.7",
+      "SceneB_5bug_srt": {
+        "exit": 1,
+        "seconds": 235.1,
+        "converged": true,
+        "turns": 10,
+        "submit_review_calls": 1,
+        "tool_calls": {
+          "run_shell": 12,
+          "edit_file": 5,
+          "submit_review": 1
+        },
+        "ran_code": 11,
+        "findings": 5,
+        "confirmed_findings": 5,
+        "blocking": 2,
+        "patches": 1,
+        "tokens": 152673,
+        "error": null,
+        "oracle_fixed": "5/5",
+        "oracle_detail": {
+          "sql_injection": true,
+          "pagination": true,
+          "is_not": true,
+          "retry": true,
+          "conn_close": true
+        }
+      },
+      "SceneA_PR_diff": {
+        "exit": 1,
+        "seconds": 266.4,
+        "converged": true,
+        "turns": 20,
+        "submit_review_calls": 1,
+        "tool_calls": {
+          "run_shell": 18,
+          "edit_file": 4,
+          "submit_review": 1
+        },
+        "ran_code": 9,
+        "findings": 2,
+        "confirmed_findings": 2,
+        "blocking": 2,
+        "patches": 4,
+        "tokens": 514687,
+        "error": null
+      },
+      "batch": "batch2"
+    },
+    {
+      "model": "auto/gemini-3.8-flash",
+      "SceneB_5bug_srt": {
+        "exit": 2,
+        "seconds": 73.9,
+        "converged": false,
+        "turns": 20,
+        "submit_review_calls": 0,
+        "tool_calls": {
+          "run_shell": 20
+        },
+        "ran_code": 14,
+        "findings": 0,
+        "confirmed_findings": 0,
+        "blocking": 0,
+        "patches": 0,
+        "tokens": 79027,
+        "error": "no valid submit_review within 20 turns"
+      },
+      "SceneA_PR_diff": {
+        "exit": 0,
+        "seconds": 30.3,
+        "converged": true,
+        "turns": 12,
+        "submit_review_calls": 1,
+        "tool_calls": {
+          "run_shell": 11,
+          "submit_review": 1
+        },
+        "ran_code": 2,
+        "findings": 0,
+        "confirmed_findings": 0,
+        "blocking": 0,
+        "patches": 0,
+        "tokens": 95776,
+        "error": null
+      },
+      "batch": "batch3"
+    },
+    {
+      "model": "kimi-code-cn/kimi-for-coding",
+      "SceneB_5bug_srt": {
+        "exit": 1,
+        "seconds": 105.2,
+        "converged": true,
+        "turns": 8,
+        "submit_review_calls": 1,
+        "tool_calls": {
+          "run_shell": 12,
+          "edit_file": 5,
+          "submit_review": 1
+        },
+        "ran_code": 9,
+        "findings": 5,
+        "confirmed_findings": 5,
+        "blocking": 1,
+        "patches": 1,
+        "tokens": 31941,
+        "error": null,
+        "oracle_fixed": "5/5",
+        "oracle_detail": {
+          "sql_injection": true,
+          "pagination": true,
+          "is_not": true,
+          "retry": true,
+          "conn_close": true
+        }
+      },
+      "SceneA_PR_diff": {
+        "exit": 0,
+        "seconds": 257.2,
+        "converged": true,
+        "turns": 11,
+        "submit_review_calls": 1,
+        "tool_calls": {
+          "run_shell": 16,
+          "submit_review": 1
+        },
+        "ran_code": 8,
+        "findings": 0,
+        "confirmed_findings": 0,
+        "blocking": 0,
+        "patches": 0,
+        "tokens": 104102,
+        "error": null
+      },
+      "batch": "batch3"
+    },
+    {
+      "model": "deepseek/deepseek-flash",
+      "SceneB_5bug_srt": {
+        "exit": 2,
+        "seconds": 109.8,
+        "converged": false,
+        "turns": 20,
+        "submit_review_calls": 0,
+        "tool_calls": {
+          "run_shell": 24,
+          "edit_file": 6
+        },
+        "ran_code": 16,
+        "findings": 0,
+        "confirmed_findings": 0,
+        "blocking": 0,
+        "patches": 0,
+        "tokens": 147641,
+        "error": "no valid submit_review within 20 turns"
+      },
+      "SceneA_PR_diff": {
+        "exit": 2,
+        "seconds": 673.7,
+        "converged": false,
+        "turns": 20,
+        "submit_review_calls": 0,
+        "tool_calls": {
+          "run_shell": 35
+        },
+        "ran_code": 5,
+        "findings": 0,
+        "confirmed_findings": 0,
+        "blocking": 0,
+        "patches": 0,
+        "tokens": 448482,
+        "error": "no valid submit_review within 20 turns"
+      },
+      "batch": "batch3"
+    },
+    {
+      "model": "auto/gpt-6.1-terra",
+      "SceneB_5bug_srt": {
+        "exit": 1,
+        "seconds": 202.9,
+        "converged": true,
+        "turns": 8,
+        "submit_review_calls": 1,
+        "tool_calls": {
+          "run_shell": 7,
+          "edit_file": 5,
+          "create_file": 1,
+          "submit_review": 1
+        },
+        "ran_code": 4,
+        "findings": 6,
+        "confirmed_findings": 6,
+        "blocking": 2,
+        "patches": 2,
+        "tokens": 34176,
+        "error": null,
+        "oracle_fixed": "5/5",
+        "oracle_detail": {
+          "sql_injection": true,
+          "pagination": true,
+          "is_not": true,
+          "retry": true,
+          "conn_close": true
+        }
+      },
+      "SceneA_PR_diff": {
+        "exit": 1,
+        "seconds": 136.4,
+        "converged": true,
+        "turns": 7,
+        "submit_review_calls": 1,
+        "tool_calls": {
+          "run_shell": 7,
+          "edit_file": 4,
+          "submit_review": 1
+        },
+        "ran_code": 1,
+        "findings": 1,
+        "confirmed_findings": 1,
+        "blocking": 1,
+        "patches": 4,
+        "tokens": 77379,
+        "error": null
+      },
+      "batch": "batch3"
+    },
+    {
+      "model": "auto/glm-5.3-flash",
+      "SceneB_5bug_srt": {
+        "exit": 1,
+        "seconds": 239.5,
+        "converged": true,
+        "turns": 11,
+        "submit_review_calls": 1,
+        "tool_calls": {
+          "run_shell": 17,
+          "edit_file": 5,
+          "submit_review": 1
+        },
+        "ran_code": 13,
+        "findings": 7,
+        "confirmed_findings": 5,
+        "blocking": 2,
+        "patches": 1,
+        "tokens": 57076,
+        "error": null,
+        "oracle_fixed": "5/5",
+        "oracle_detail": {
+          "sql_injection": true,
+          "pagination": true,
+          "is_not": true,
+          "retry": true,
+          "conn_close": true
+        }
+      },
+      "SceneA_PR_diff": {
+        "exit": 2,
+        "seconds": 820.1,
+        "converged": false,
+        "turns": 20,
+        "submit_review_calls": 0,
+        "tool_calls": {
+          "run_shell": 29
+        },
+        "ran_code": 12,
+        "findings": 0,
+        "confirmed_findings": 0,
+        "blocking": 0,
+        "patches": 0,
+        "tokens": 316354,
+        "error": "no valid submit_review within 20 turns"
+      },
+      "batch": "batch3"
+    },
+    {
+      "model": "qoder-cn/qfmodel",
+      "SceneB_5bug_srt": {
+        "exit": 1,
+        "seconds": 451.6,
+        "converged": true,
+        "turns": 17,
+        "submit_review_calls": 1,
+        "tool_calls": {
+          "run_shell": 18,
+          "edit_file": 4,
+          "submit_review": 1
+        },
+        "ran_code": 14,
+        "findings": 6,
+        "confirmed_findings": 6,
+        "blocking": 3,
+        "patches": 1,
+        "tokens": 140274,
+        "error": null,
+        "oracle_fixed": "5/5",
+        "oracle_detail": {
+          "sql_injection": true,
+          "pagination": true,
+          "is_not": true,
+          "retry": true,
+          "conn_close": true
+        }
+      },
+      "SceneA_PR_diff": {
+        "error": "Command '['python3', '-I', '/tmp/conv20/review.py', '--no-sandbox', '--model', 'qoder-cn/qfmodel', '--max-turns', '20', '--base', '94210ee', '--head', '73d2f35', '--output', '/tmp/conv20/results3/sceneA_qwen3.8-flash.json']' timed out after 900 seconds",
+        "converged": false
+      },
+      "batch": "batch3"
+    },
+    {
+      "model": "qoder-cn/qmodel_38max",
+      "SceneB_5bug_srt": {
+        "exit": 2,
+        "seconds": 793.3,
+        "converged": false,
+        "turns": 20,
+        "submit_review_calls": 0,
+        "tool_calls": {
+          "run_shell": 30,
+          "edit_file": 1
+        },
+        "ran_code": 21,
+        "findings": 0,
+        "confirmed_findings": 0,
+        "blocking": 0,
+        "patches": 0,
+        "tokens": 176486,
+        "error": "no valid submit_review within 20 turns"
+      },
+      "SceneA_PR_diff": {
+        "error": "Command '['python3', '-I', '/tmp/conv20/review.py', '--no-sandbox', '--model', 'qoder-cn/qmodel_38max', '--max-turns', '20', '--base', '94210ee', '--head', '73d2f35', '--output', '/tmp/conv20/results3/sceneA_qwen3.8-max.json']' timed out after 900 seconds",
+        "converged": false
+      },
+      "batch": "batch3"
+    }
+  ]
+}
