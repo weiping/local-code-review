@@ -15,12 +15,11 @@
 #         https://docs.github.com/en/copilot/how-tos/copilot-sdk/auth/server-to-server-tokens
 #   GitHub Models (models.github.ai) was retired 2026-07-30.
 #
-# Real model in CI: call Zhipu GLM-5.3 directly (OpenAI-compatible Chat Completions + tools).
-#   vars.LLM_BASE_URL   = https://open.bigmodel.cn/api/paas/v4
-#   vars.AI_REVIEW_MODEL = glm-5.3
-#   secrets.LLM_API_KEY  = Zhipu API key (Bearer)
-#   Docs: https://docs.bigmodel.cn/cn/guide/develop/openai/introduction
-#         https://docs.bigmodel.cn/cn/guide/models/text/glm-5.3
+# Real model in CI: call Kimi K3.1 Pro directly (OpenAI-compatible Chat Completions + tools).
+#   vars.LLM_BASE_URL   = https://api.kimi.com/coding/v1
+#   vars.AI_REVIEW_MODEL = k3.1-pro
+#   secrets.LLM_API_KEY  = Kimi Code plan key (sk-k…)
+#   Docs: https://www.kimi.com/code
 name: ai-review
 on:
   pull_request:                     # never pull_request_target: that would run PR code with the base repo's secrets
@@ -47,7 +46,7 @@ jobs:
       - name: Require model endpoint configuration
         run: |
           if [ -z "$LLM_BASE_URL" ] || [ -z "$AI_REVIEW_MODEL" ] || [ -z "$LLM_API_KEY" ]; then
-            echo "::error title=AI review config::Set vars.LLM_BASE_URL=https://open.bigmodel.cn/api/paas/v4, vars.AI_REVIEW_MODEL=glm-5.3, and secrets.LLM_API_KEY (Zhipu). Official Copilot-in-Actions is CLI/SDK only and cannot drive review.py."
+            echo "::error title=AI review config::Set vars.LLM_BASE_URL=https://api.kimi.com/coding/v1, vars.AI_REVIEW_MODEL=k3.1-pro, and secrets.LLM_API_KEY (Kimi Code plan key). Official Copilot-in-Actions is CLI/SDK only and cannot drive review.py."
             exit 2
           fi
       - name: Take review.py from the base commit, not from the PR
@@ -63,16 +62,7 @@ jobs:
           case $rc in
             0) echo "AI review passed" ;;
             1) echo "::error title=AI review::blocking findings, see the ai-review artifact"; exit 1 ;;
-            # exit 2 is "did not finish", and it covers both a model that never concluded and an
-            # infrastructure failure (rejected key, unreachable endpoint, missing review.py). Only forgive
-            # the first one: the report holds the model's own messages, so it says whether the model ran.
-            # A bad key or a dead endpoint leaves no assistant turn behind and must fail the job.
-            2) if python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); sys.exit(0 if any(m.get("role")=="assistant" for m in d.get("messages",[])) else 1)' "$RUNNER_TEMP/ai-review.json" 2>/dev/null; then
-                 echo "::warning title=AI review incomplete::the model did not conclude; not blocking, see the ai-review artifact"
-               else
-                 echo "::error title=AI review failed::exit 2 before the model ran (endpoint, key or review.py problem)"; exit 2
-               fi ;;
-            *) echo "::error title=AI review failed::exit $rc"; exit "$rc" ;;
+            *) echo "::error title=AI review incomplete::exit $rc (model or configuration problem)"; exit 2 ;;
           esac
       - name: Upload report and suggested patches
         if: always()
