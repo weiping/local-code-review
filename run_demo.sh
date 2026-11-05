@@ -123,6 +123,14 @@ $REVIEW --model fake --shell-timeout 3 >/dev/null 2>&1; rc=$?; stop; sleep 1
 c=0; tool_out | grep -q "timed out after 3s" || c=1; pgrep -f "sleep 30[12]" >/dev/null && { c=1; echo "   sleep left running"; pkill -f "sleep 30[12]"; }
 check "run_shell timeout kills the command and its children ($(( $(date +%s) - start ))s)" 0 $rc $c
 
+fresh; server ambiguous; $REVIEW --model fake --apply > "$work/out.txt" 2>&1; rc=$?; stop
+t=$(tool_out); c=0
+for want in "found 2; it matches at 2 places" "match 1 at line 2:" "match 2 at line 7:" "    6| def b(x):" \
+            "Recorded edit_file for app/dup.py" "found 0. Closest text" "    7|     y = x + 1"; do
+  grep -qF -- "$want" <<<"$t" || { echo "   missing: $want"; c=1; }; done
+[ "$(sed -n 2p app/dup.py)$(sed -n 7p app/dup.py)" = "    y = x + 1    y = x + 2" ] || { echo "   wrong edit applied"; c=1; }
+check "edit_file: ambiguous old_str reports each match with line numbers; retry with context edits only one" 0 $rc $c
+
 fresh; server delete; $REVIEW --model fake --apply > "$work/out.txt" 2>&1; rc=$?; stop
 t=$(tool_out); c=0
 grep -q "deleted app/report.py" "$work/out.txt" && [ ! -e app/report.py ] || { echo "   delete not applied"; c=1; }

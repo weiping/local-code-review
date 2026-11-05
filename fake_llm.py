@@ -64,6 +64,7 @@ LIMITS = "; ".join(
      "echo ENV-NAMES $(env | cut -d= -f1 | grep -v -i proxy | sort | tr '\\n' ' ')"])
 PRIVATE = ("curl -s -m 10 -o /dev/null -w 'PRIVATE-STATUS %{http_code}\\n' http://10.0.0.1.nip.io/ || echo PRIVATE-BLOCKED; "
            "curl -s -m 20 -o /dev/null -w 'PUBLIC-STATUS %{http_code}\\n' https://pypi.org/simple/six/")
+DUP = "def a(x):\n    y = x + 1\n    return y\n\n\ndef b(x):\n    y = x + 1\n    return y\n"
 F = lambda file, line, sev, ok, why, ev: {"file": file, "line": line, "severity": sev, "confirmed": ok,
                                           "explanation": why, "evidence": ev}
 GOOD = [F("app/orders.py", 12, "high", True, "status is formatted into the SQL string (injection)", "injection rows: 3"),
@@ -84,6 +85,12 @@ S = {
         [("submit_review", {"findings": [dict(GOOD[0], severity="critical")]})],
         [("submit_review", {"findings": GOOD})],
     ],
+    "ambiguous": [[("create_file", {"path": "app/dup.py", "content": DUP})],
+                  [("edit_file", {"path": "app/dup.py", "old_str": "    y = x + 1", "new_str": "    y = x + 2"})],
+                  [("edit_file", {"path": "app/dup.py", "old_str": "def b(x):\n    y = x + 1",
+                                  "new_str": "def b(x):\n    y = x + 2"})],
+                  [("edit_file", {"path": "app/dup.py", "old_str": "    yy = x + 1", "new_str": "x"})],
+                  [("submit_review", {"findings": []})]],
     "clean": [[("submit_review", {"findings": []})]],
     "unconfirmed": [[("submit_review", {"findings": [GOOD[4] | {"severity": "high"}]})]],
     "silent": [],

@@ -18,7 +18,7 @@ TOOLS = [
                        "properties": {"command": {"type": "string"}}}}},
     {"type": "function", "function": {
         "name": "edit_file", "description": "Propose a fix: replace old_str with new_str in one file (old_str must "
-        "occur exactly once). Recorded as a patch outside the sandbox; the sandbox keeps the original code.",
+        "occur exactly once: include enough surrounding lines to make it unique). Recorded as a patch outside the sandbox; the sandbox keeps the original code.",
         "parameters": {"type": "object", "required": ["path", "old_str", "new_str"],
                        "properties": {k: {"type": "string"} for k in ("path", "old_str", "new_str")}}}},
     {"type": "function", "function": {
@@ -160,12 +160,37 @@ class Sandbox:
             shutil.rmtree(self.cfgdir, ignore_errors=True)
 
 
+def edit_hint(text, old, found, ctx=2, most=5):
+    """Show where an ambiguous old_str matches, or the closest line when it matches nowhere."""
+    lines = text.splitlines()
+    snip = lambda a, b: "\n".join(f"{n + 1:>5}| {lines[n]}" for n in range(max(a, 0), min(b, len(lines))))
+    if found > 1:
+        starts, i = [], text.find(old)
+        while i != -1 and len(starts) < most:
+            starts.append(text.count("\n", 0, i))
+            i = text.find(old, i + 1)
+        end = old.count("\n")
+        parts = [f"match {k + 1} at line {s + 1}:\n" + snip(s - ctx, s + end + ctx + 1) for k, s in enumerate(starts)]
+        return ("; it matches at " + str(found) + " places. Add surrounding lines that differ so old_str is "
+                "unique, then retry.\n" + "\n".join(parts))
+    first = next((l.strip() for l in old.splitlines() if l.strip()), "")
+    if not first or not lines:
+        return ""
+    import difflib
+    best = max(range(len(lines)), key=lambda n: difflib.SequenceMatcher(None, first, lines[n].strip()).ratio())
+    if difflib.SequenceMatcher(None, first, lines[best].strip()).ratio() < 0.6:
+        return ". Read the file again (run_shell) and copy old_str exactly."
+    return (". Closest text (check whitespace and exact characters), line " + str(best + 1) + ":\n"
+            + snip(best - ctx, best + ctx + 1))
+
+
 def edit_file(root, originals, op):
     path = inside(root, op["path"])
     text = path.read_text()
     found = text.count(op["old_str"]) if op["old_str"] else 0
     if found != 1:
-        raise ValueError(f"old_str must occur exactly once in {op['path']}, found {found}")
+        raise ValueError(f"old_str must occur exactly once in {op['path']}, found {found}"
+                         + edit_hint(text, op["old_str"], found))
     originals.setdefault(op["path"], text)
     path.write_text(text.replace(op["old_str"], op["new_str"], 1))
 
