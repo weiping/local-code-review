@@ -29,6 +29,7 @@ run() { # name branch scenario expected(pass|fail) grep-pattern [base_url] [head
   XDG_CONFIG_HOME="$work/cfg" $ACT pull_request -W .github/workflows/ai-review.yml -e "$work/event.json" \
     -P ubuntu-latest=-self-hosted --artifact-server-path "$work/artifacts" \
     --var LLM_BASE_URL="${url:-http://127.0.0.1:$port/v1}" --var AI_REVIEW_MODEL=fake \
+    --secret LLM_API_KEY=fake \
     > "$work/$name.log" 2>&1
   local rc=$?; kill $srv 2>/dev/null; wait $srv 2>/dev/null
   local got=pass; [ $rc = 0 ] || got=fail
