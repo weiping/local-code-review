@@ -13,7 +13,8 @@
 | `fake_llm.py` | 按剧本返回工具调用的假模型服务。剧本里的检查命令会在 srt 沙箱里真跑，只有"判断"是写死的 |
 | `run_demo.sh` | 用假模型跑完全部机制用例，逐条判定 PASS/FAIL |
 | `fixtures/make_repo.sh` | 生成示例仓库：先提交一个干净版本，再在工作区留下 5 个埋点 bug，外加一个重命名后又修改的文件、一个约 288 KiB 只改了一行的数据文件、一个未跟踪的新文件 |
-| `fixtures/pre-push` | pre-push 钩子：只审查这次要推送的提交，退出码 1 和 2 都会阻止推送（`AI_REVIEW_ON_INCOMPLETE=warn` 时 2 只警告）。仓库根目录有 `.env` 就自动加载（`LLM_BASE_URL`、`AI_REVIEW_MODEL`、`AI_REVIEW_CONTEXT`、`AI_REVIEW_ON_INCOMPLETE`），格式见 `.env.example`。本机安装：`cp fixtures/pre-push .git/hooks/pre-push && chmod +x .git/hooks/pre-push` |
+| `fixtures/pre-push` | pre-push 钩子：只审查这次要推送的提交，退出码 1 和 2 都会阻止推送（`AI_REVIEW_ON_INCOMPLETE=warn` 时 2 只警告）。仓库根目录有 `.env` 就自动加载（`LLM_BASE_URL`、`AI_REVIEW_MODEL`、`AI_REVIEW_CONTEXT`、`AI_REVIEW_ON_INCOMPLETE`），格式见 `.env.example`。本机验证过三条路径：clean 放行、confirmed medium 放行、confirmed high 拦下推送。本机安装：`cp fixtures/pre-push .git/hooks/pre-push && chmod +x .git/hooks/pre-push` |
+| `.env.example` | `.env` 的模板：复制到仓库根目录改名 `.env`（已 gitignore），hook 自动加载 |
 | `realmodel/run_real.sh`、`realmodel/oracle.py` | 真实模型实测：在示例仓库上跑 N 次，`--apply` 后用 oracle 在宿主机上逐一检查五个 bug 是否修好 |
 | `realmodel/analyze.py` | 从报告里统计 token、发现，以及 `run_shell` 里有几条真的执行了代码 |
 | `realmodel/results-srt-glm/`、`realmodel/results-srt-kimi/` | Mac mini M4 上经 Magpie 接入 `auto/glm-5.3`、`kimi-code-cn/k3.1-pro` 各跑 3 次的报告和汇总。云端模型，代码会发到服务商 |
@@ -92,6 +93,8 @@ CI 改为直连 [Kimi K3.1 Pro](https://www.kimi.com/code) 的 OpenAI 兼容接�
 | `vars.AI_REVIEW_MODEL` | `k3.1-pro` |
 | `secrets.LLM_API_KEY` | Kimi Code 套餐 Key（`sk-k…`） |
 
-实测：`k3.1-pro` 在同一份 diff 上 9 轮就调用了 `submit_review`（GLM-5.3 有时 20 轮跑完仍不提交）。
+实测（同一份 diff，`--no-sandbox`）：`k3.1-pro` 3～11 轮就调用 `submit_review`；GLM-5.3 和 `auto/kimi-k3` 都 20 轮跑满不提交（各烧 26～31 万 tokens）。
+
+模型兼容：有的端点只接受一个 temperature（Kimi 只收 1），`review.py` 遇到 400 且报文提到 temperature 会自动改用 1 重试该轮。
 
 本仓库已启用 `.github/workflows/ai-review.yml`（读根目录 `review.py`）。其他仓库仍按模板：拷 `ci/ai-review.yml` 到 `.github/workflows/ai-review.yml`，并把 `review.py` 放到 `tools/review.py`。`--no-sandbox` 下模型的命令能读到这个 job 能读的一切，包括进程里的模型密钥，也能联网；job 只给 `contents: read`。本机开发仍可用 Magpie（例如 `auto/glm-5.3`），与 CI 直连厂商互不冲突。
