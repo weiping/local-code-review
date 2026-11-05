@@ -80,14 +80,14 @@ CI 用 GitHub 托管的 `ubuntu-latest`，不装 srt：每个 job 都是一台�
 
 本仓库的 `.github/workflows/demo.yml` 只用假模型：不调真实模型、不需要 secret。`ci/ai-review.yml` 是给读者拷贝的 PR 审查示例（不放进本仓库的 workflows，避免没配变量就红）。
 
-真实模型要用 **OpenAI 兼容且支持 `tool_calls` 的网关**。GitHub Models（`models.github.ai`）已于 2026-07-30 退役；Actions 里官方的 Copilot 接入是 [`actions/ai-inference`](https://github.com/actions/ai-inference)（Copilot CLI），只返回纯文本，**不能**驱动 `review.py` 的多轮工具循环。
+真实审查需要 OpenAI 兼容且支持 `tool_calls` 的地址。官方文档里 GitHub Copilot 接入 Actions 的方式是 Copilot CLI（或 Agentic Workflows / Copilot SDK）：prompt 进、文本或 agent 出，**不是**给自定义脚本用的 `/v1/chat/completions` + 多轮 `tool_calls`，因此不能满足本仓库的 `review.py`。GitHub Models 也已于 2026-07-30 退役。见 [Using Copilot CLI in GitHub Actions](https://docs.github.com/en/copilot/how-tos/copilot-cli/use-copilot-cli-in-actions)、[Server-to-server authentication](https://docs.github.com/en/copilot/how-tos/copilot-sdk/auth/server-to-server-tokens)。
 
-要用 GitHub Copilot 的模型跑审查：在 Magpie 里登录 Copilot，让 runner 能访问 Magpie（推荐自托管 runner 跑在同一台机器上），然后：
+CI 改为直连智谱 [GLM-5.3](https://docs.bigmodel.cn/cn/guide/models/text/glm-5.3) 的 OpenAI 兼容接口（[文档](https://docs.bigmodel.cn/cn/guide/develop/openai/introduction)）：
 
-| 配置 | 示例 |
+| 配置 | 值 |
 | --- | --- |
-| `vars.LLM_BASE_URL` | `http://127.0.0.1:3425/v1` |
-| `vars.AI_REVIEW_MODEL` | `copilot/claude-haiku-5.5` |
-| `secrets.LLM_API_KEY` | `none`（本机 Magpie） |
+| `vars.LLM_BASE_URL` | `https://open.bigmodel.cn/api/paas/v4` |
+| `vars.AI_REVIEW_MODEL` | `glm-5.3` |
+| `secrets.LLM_API_KEY` | 智谱开放平台 API Key |
 
-把 `ci/ai-review.yml` 拷到 `.github/workflows/ai-review.yml`，`review.py` 放到 `tools/review.py`。`--no-sandbox` 下模型的命令能读到这个 job 能读的一切，包括进程里的模型密钥，也能联网；job 只给 `contents: read`。
+把 `ci/ai-review.yml` 拷到 `.github/workflows/ai-review.yml`，`review.py` 放到 `tools/review.py`。`--no-sandbox` 下模型的命令能读到这个 job 能读的一切，包括进程里的模型密钥，也能联网；job 只给 `contents: read`。本机开发仍可用 Magpie（例如 `auto/glm-5.3`），与 CI 直连智谱互不冲突。

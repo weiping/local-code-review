@@ -1,24 +1,25 @@
-# .github/workflows/ai-review.yml: AI review for pull requests.
+# .github/workflows/ai-review.yml: AI review for pull requests on a GitHub-hosted runner.
 # Copy this file to .github/workflows/ and put review.py at tools/review.py.
 #
-# Isolation: GitHub-hosted ubuntu-latest is a fresh VM thrown away after the job, so review.py
-# runs with --no-sandbox (no srt). The model's commands can reach the checkout, LLM_API_KEY in
-# this process, and the internet. Use a model key with a spending limit; keep permissions read-only.
+# Isolation: ubuntu-latest is a fresh VM thrown away after the job, so review.py runs with
+# --no-sandbox (no srt). The model's commands can reach the checkout, LLM_API_KEY in this
+# process, and the internet. Use a model key with a spending limit; keep permissions read-only.
 #
-# Model endpoint (required for a real review):
-#   review.py talks OpenAI-compatible Chat Completions WITH tool_calls.
-#   GitHub Models (models.github.ai) was retired on 2026-07-30 — do not use it.
-#   actions/ai-inference (Copilot CLI) returns plain text and cannot drive review.py's tool loop.
-#   Working path for GitHub Copilot models: Magpie signed in to Copilot, reachable from the runner
-#   (self-hosted runner on the Magpie machine, or Magpie exposed on your private network).
-#   Example vars: LLM_BASE_URL=http://127.0.0.1:3425/v1  AI_REVIEW_MODEL=copilot/claude-haiku-5.5
-#   secrets.LLM_API_KEY=none  (Magpie on localhost) or the gateway key Magpie expects.
+# Why not GitHub Copilot in Actions?
+#   Official docs wire Copilot CLI (prompt in → text/agent out) with GITHUB_TOKEN and
+#   permissions: copilot-requests: write, or the Copilot SDK / server-to-server path.
+#   That is not an OpenAI-compatible /v1/chat/completions base URL with tool_calls for a
+#   custom Python loop, so it cannot drive review.py.
+#   Docs: https://docs.github.com/en/copilot/how-tos/copilot-cli/use-copilot-cli-in-actions
+#         https://docs.github.com/en/copilot/how-tos/copilot-sdk/auth/server-to-server-tokens
+#   GitHub Models (models.github.ai) was retired 2026-07-30.
 #
-# Official references:
-#   https://docs.github.com/en/github-models
-#   https://github.blog/changelog/2026-07-30-github-models-is-now-retired/
-#   https://github.com/actions/ai-inference
-#   https://github.github.com/gh-aw/reference/auth/
+# Real model in CI: call Zhipu GLM-5.3 directly (OpenAI-compatible Chat Completions + tools).
+#   vars.LLM_BASE_URL   = https://open.bigmodel.cn/api/paas/v4
+#   vars.AI_REVIEW_MODEL = glm-5.3
+#   secrets.LLM_API_KEY  = Zhipu API key (Bearer)
+#   Docs: https://docs.bigmodel.cn/cn/guide/develop/openai/introduction
+#         https://docs.bigmodel.cn/cn/guide/models/text/glm-5.3
 name: ai-review
 on:
   pull_request:                     # never pull_request_target: that would run PR code with the base repo's secrets
@@ -29,14 +30,12 @@ jobs:
   review:
     # Same-repository PRs only. Fork PRs get no secrets anyway; skip them instead of failing.
     if: github.event.pull_request.head.repo.full_name == github.repository
-    # Prefer a self-hosted runner that can reach Magpie+Copilot. ubuntu-latest works only if
-    # vars.LLM_BASE_URL is reachable from the public hosted network.
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      LLM_BASE_URL: ${{ vars.LLM_BASE_URL }}            # Magpie OpenAI base, e.g. http://127.0.0.1:3425/v1
-      LLM_API_KEY: ${{ secrets.LLM_API_KEY }}           # none for local Magpie; otherwise the gateway key
-      AI_REVIEW_MODEL: ${{ vars.AI_REVIEW_MODEL }}      # e.g. copilot/claude-haiku-5.5
+      LLM_BASE_URL: ${{ vars.LLM_BASE_URL }}            # https://open.bigmodel.cn/api/paas/v4
+      LLM_API_KEY: ${{ secrets.LLM_API_KEY }}           # Zhipu API key
+      AI_REVIEW_MODEL: ${{ vars.AI_REVIEW_MODEL }}      # glm-5.3
       BASE: ${{ github.event.pull_request.base.sha }}
       HEAD: ${{ github.event.pull_request.head.sha }}
     steps:
@@ -46,8 +45,8 @@ jobs:
           persist-credentials: false
       - name: Require model endpoint configuration
         run: |
-          if [ -z "$LLM_BASE_URL" ] || [ -z "$AI_REVIEW_MODEL" ]; then
-            echo "::error title=AI review config::Set repository variables LLM_BASE_URL and AI_REVIEW_MODEL (Copilot via Magpie: http://127.0.0.1:3425/v1 and copilot/claude-haiku-5.5). GitHub Models is retired; Copilot CLI cannot drive review.py."
+          if [ -z "$LLM_BASE_URL" ] || [ -z "$AI_REVIEW_MODEL" ] || [ -z "$LLM_API_KEY" ]; then
+            echo "::error title=AI review config::Set vars.LLM_BASE_URL=https://open.bigmodel.cn/api/paas/v4, vars.AI_REVIEW_MODEL=glm-5.3, and secrets.LLM_API_KEY (Zhipu). Official Copilot-in-Actions is CLI/SDK only and cannot drive review.py."
             exit 2
           fi
       - name: Take review.py from the base commit, not from the PR
