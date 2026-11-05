@@ -78,6 +78,16 @@ python3 /path/to/review.py --model <提供方/模型名> --context tests/test_or
 
 CI 用 GitHub 托管的 `ubuntu-latest`，不装 srt：每个 job 都是一台新开、用完即销毁的虚拟机，job 里只有只读的 `GITHUB_TOKEN`，所以 `review.py` 用 `--no-sandbox` 直接在 runner 上跑命令。只有 srt 才成立的限制类用例在本机的 `bash run_demo.sh` 里测。
 
-`ci/ai-review.yml` 是给读者拷贝的 PR 审查示例，没有放进本仓库的 `.github/workflows/`，因为它要一个真实的模型地址和密钥（`vars.LLM_BASE_URL`、`vars.AI_REVIEW_MODEL`、`secrets.LLM_API_KEY`），本仓库不放 secret。`demo.yml` 的 `ci-example` job 用 act 和假模型在 runner 上把它按 PR 事件跑一遍。GitHub Models 已在 2026-07-30 停止服务，不能用 `GITHUB_TOKEN` 调模型。
+本仓库的 `.github/workflows/demo.yml` 只用假模型：不调真实模型、不需要 secret。`ci/ai-review.yml` 是给读者拷贝的 PR 审查示例（不放进本仓库的 workflows，避免没配变量就红）。
 
-用到自己的仓库：复制到 `.github/workflows/ai-review.yml`，把 `review.py` 放到 `tools/review.py`，设好上面的变量和 secret。`--no-sandbox` 下模型的命令能读到这个 job 能读的一切，包括 `review.py` 进程里的模型密钥，也能联网，所以给它一个只能调模型、设了额度的密钥，job 只给 `contents: read`。
+真实模型要用 **OpenAI 兼容且支持 `tool_calls` 的网关**。GitHub Models（`models.github.ai`）已于 2026-07-30 退役；Actions 里官方的 Copilot 接入是 [`actions/ai-inference`](https://github.com/actions/ai-inference)（Copilot CLI），只返回纯文本，**不能**驱动 `review.py` 的多轮工具循环。
+
+要用 GitHub Copilot 的模型跑审查：在 Magpie 里登录 Copilot，让 runner 能访问 Magpie（推荐自托管 runner 跑在同一台机器上），然后：
+
+| 配置 | 示例 |
+| --- | --- |
+| `vars.LLM_BASE_URL` | `http://127.0.0.1:3425/v1` |
+| `vars.AI_REVIEW_MODEL` | `copilot/claude-haiku-5.5` |
+| `secrets.LLM_API_KEY` | `none`（本机 Magpie） |
+
+把 `ci/ai-review.yml` 拷到 `.github/workflows/ai-review.yml`，`review.py` 放到 `tools/review.py`。`--no-sandbox` 下模型的命令能读到这个 job 能读的一切，包括进程里的模型密钥，也能联网；job 只给 `contents: read`。
