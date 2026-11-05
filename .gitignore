@@ -5,3 +5,4 @@ __pycache__/
 .env
 edit-eval/results/runs/
 edit-eval/tasks/
+realmodel/results-convergence/runs/

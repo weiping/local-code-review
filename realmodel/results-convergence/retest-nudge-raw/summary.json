@@ -1,0 +1,103 @@
+{
+  "deepseek-v4-pro": {
+    "model": "deepseek/deepseek-v4-pro",
+    "B": {
+      "exit": 1,
+      "seconds": 77.5,
+      "converged": true,
+      "turns": 17,
+      "submit_review_calls": 1,
+      "tool_calls": {
+        "run_shell": 15,
+        "edit_file": 5,
+        "submit_review": 1
+      },
+      "findings": 5,
+      "confirmed": 5,
+      "patches": 1,
+      "tokens": 84104,
+      "error": null,
+      "nudge_fired": false,
+      "verdict": "5 findings (5 confirmed)",
+      "oracle": "5/5"
+    },
+    "A": {
+      "exit": 2,
+      "seconds": 336.9,
+      "converged": false,
+      "turns": 20,
+      "submit_review_calls": 0,
+      "tool_calls": {
+        "run_shell": 27
+      },
+      "findings": null,
+      "confirmed": 0,
+      "patches": 0,
+      "tokens": 349263,
+      "error": "no valid submit_review within 20 turns",
+      "nudge_fired": true,
+      "verdict": null
+    }
+  },
+  "deepseek-flash": {
+    "model": "deepseek/deepseek-flash",
+    "B": {
+      "exit": 1,
+      "seconds": 95.5,
+      "converged": true,
+      "turns": 19,
+      "submit_review_calls": 1,
+      "tool_calls": {
+        "run_shell": 25,
+        "edit_file": 5,
+        "submit_review": 1
+      },
+      "findings": 5,
+      "confirmed": 5,
+      "patches": 1,
+      "tokens": 160710,
+      "error": null,
+      "nudge_fired": true,
+      "verdict": "5 findings (5 confirmed)",
+      "oracle": "5/5"
+    },
+    "A": {
+      "exit": 0,
+      "seconds": 401.1,
+      "converged": true,
+      "turns": 18,
+      "submit_review_calls": 1,
+      "tool_calls": {
+        "run_shell": 24,
+        "submit_review": 1
+      },
+      "findings": 3,
+      "confirmed": 0,
+      "patches": 0,
+      "tokens": 398689,
+      "error": null,
+      "nudge_fired": true,
+      "verdict": "3 findings (0 confirmed)"
+    }
+  },
+  "glm-5.3": {
+    "model": "auto/glm-5.3",
+    "A": {
+      "exit": 2,
+      "seconds": 851.0,
+      "converged": false,
+      "turns": 20,
+      "submit_review_calls": 0,
+      "tool_calls": {
+        "run_shell": 26
+      },
+      "findings": null,
+      "confirmed": 0,
+      "patches": 0,
+      "tokens": 302794,
+      "error": "no valid submit_review within 20 turns",
+      "nudge_fired": true,
+      "verdict": null
+    }
+  }
+}
