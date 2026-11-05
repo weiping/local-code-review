@@ -1,0 +1,76 @@
+# Live AI review for PRs in this repository (ubuntu-latest, --no-sandbox).
+# Portable template for other repos: ci/ai-review.yml (expects tools/review.py).
+# This checkout keeps review.py at the repo root, so the job reads BASE:review.py.
+#
+# Isolation: ubuntu-latest is a fresh VM thrown away after the job, so review.py runs with
+# --no-sandbox (no srt). The model's commands can reach the checkout, LLM_API_KEY in this
+# process, and the internet. Use a model key with a spending limit; keep permissions read-only.
+#
+# Why not GitHub Copilot in Actions?
+#   Official docs wire Copilot CLI (prompt in → text/agent out) with GITHUB_TOKEN and
+#   permissions: copilot-requests: write, or the Copilot SDK / server-to-server path.
+#   That is not an OpenAI-compatible /v1/chat/completions base URL with tool_calls for a
+#   custom Python loop, so it cannot drive review.py.
+#   Docs: https://docs.github.com/en/copilot/how-tos/copilot-cli/use-copilot-cli-in-actions
+#         https://docs.github.com/en/copilot/how-tos/copilot-sdk/auth/server-to-server-tokens
+#   GitHub Models (models.github.ai) was retired 2026-07-30.
+#
+# Real model in CI: call Zhipu GLM-5.3 directly (OpenAI-compatible Chat Completions + tools).
+#   vars.LLM_BASE_URL   = https://open.bigmodel.cn/api/paas/v4
+#   vars.AI_REVIEW_MODEL = glm-5.3
+#   secrets.LLM_API_KEY  = Zhipu API key (Bearer)
+#   Docs: https://docs.bigmodel.cn/cn/guide/develop/openai/introduction
+#         https://docs.bigmodel.cn/cn/guide/models/text/glm-5.3
+name: ai-review
+on:
+  pull_request:                     # never pull_request_target: that would run PR code with the base repo's secrets
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read                    # the job only reads code
+jobs:
+  review:
+    # Same-repository PRs only. Fork PRs get no secrets anyway; skip them instead of failing.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      LLM_BASE_URL: ${{ vars.LLM_BASE_URL }}            # https://open.bigmodel.cn/api/paas/v4
+      LLM_API_KEY: ${{ secrets.LLM_API_KEY }}           # Zhipu API key
+      AI_REVIEW_MODEL: ${{ vars.AI_REVIEW_MODEL }}      # glm-5.3
+      BASE: ${{ github.event.pull_request.base.sha }}
+      HEAD: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0                # full history: base and head commits must both be present
+          persist-credentials: false
+      - name: Require model endpoint configuration
+        run: |
+          if [ -z "$LLM_BASE_URL" ] || [ -z "$AI_REVIEW_MODEL" ] || [ -z "$LLM_API_KEY" ]; then
+            echo "::error title=AI review config::Set vars.LLM_BASE_URL=https://open.bigmodel.cn/api/paas/v4, vars.AI_REVIEW_MODEL=glm-5.3, and secrets.LLM_API_KEY (Zhipu). Official Copilot-in-Actions is CLI/SDK only and cannot drive review.py."
+            exit 2
+          fi
+      - name: Take review.py from the base commit, not from the PR
+        run: git show "$BASE:review.py" > "$RUNNER_TEMP/review.py"
+      - name: Review base...head
+        run: |
+          set +e
+          python3 -I "$RUNNER_TEMP/review.py" --no-sandbox --model "$AI_REVIEW_MODEL" \
+            --base "$BASE" --head "$HEAD" --output "$RUNNER_TEMP/ai-review.json"
+          rc=$?
+          python3 -c 'import json, sys; d = json.load(open(sys.argv[1])); open(sys.argv[2], "w").write("".join(p["diff"] for p in d.get("patches", [])))' \
+            "$RUNNER_TEMP/ai-review.json" "$RUNNER_TEMP/ai-review.patch" 2>/dev/null
+          case $rc in
+            0) echo "AI review passed" ;;
+            1) echo "::error title=AI review::blocking findings, see the ai-review artifact"; exit 1 ;;
+            *) echo "::error title=AI review incomplete::exit $rc (model or configuration problem)"; exit 2 ;;
+          esac
+      - name: Upload report and suggested patches
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-review
+          path: |
+            ${{ runner.temp }}/ai-review.json
+            ${{ runner.temp }}/ai-review.patch
+          if-no-files-found: ignore
