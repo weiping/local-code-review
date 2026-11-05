@@ -70,7 +70,7 @@ python3 /path/to/review.py --model <提供方/模型名> --context tests/test_or
 
 退出码：0 表示通过；1 表示有阻断级发现（默认只算 `confirmed=true` 且 severity 为 high 的）；2 表示没有完成，包括 git、srt、网络等各类错误，以及收到 SIGTERM（退出前会停掉正在跑的沙箱命令，并删掉临时目录）。
 
-轮数用尽前会提醒模型收尾：只剩 3 轮时（`WRAP_UP_TURNS`）插一句「停止再查，现在调用 submit_review」。没有这一步，有些模型会把 20 轮全花在跑检查上，最后既没结论也没退出码（实测 `deepseek-v4-pro`、`auto/glm-5.3`、`auto/minimax-m3` 都会这样）。代价是模型也可能用一份空 findings 交卷——那表示「没发现问题」而不是「没审完」，两者的区别要看报告里的轮数（`realmodel/analyze.py` 会统计 `run_shell` 次数和轮数）。
+轮数用尽前会提醒模型收尾：只剩 3 轮时（`WRAP_UP_TURNS`）插一句「停止再查，现在调用 submit_review」。实测效果分两档：能救回一部分模型（`deepseek-flash` 两个场景都被提醒拉回并交出真发现，其中 5-bug 场景 oracle 5/5）；对无视指令的模型无效（`auto/glm-5.3` 和 `deepseek-v4-pro` 在配置类 diff 上收到提醒后仍然继续跑检查直到轮数耗尽，glm 甚至在提醒后又烧了一个 120 秒的 shell 超时）。代价是模型也可能用一份空 findings 交卷——那表示「没发现问题」而不是「没审完」，两者的区别要看报告里的轮数（`realmodel/analyze.py` 会统计 `run_shell` 次数和轮数）。
 
 已知限制：
 
@@ -117,7 +117,7 @@ python3 /path/to/review.py --model <提供方/模型名> --context tests/test_or
 
 两个基准场景各跑一次（`--max-turns 20`，n=1 每格，数字作指示性参考）：
 
-> 表里的「❌ 跑满 20 轮不交卷」是加收尾提醒**之前**的结果。这些模型现在会被提醒交卷，但交卷质量仍需自己判断（空 findings 还是真结论，看报告里的轮数）。
+> 表里的「❌ 跑满 20 轮不交卷」是加收尾提醒**之前**的结果。之后用带提醒的 `review.py` 重测了这些格子（n=1，`realmodel/results-convergence/retest-nudge.json`）：`deepseek-flash` 两场景都被提醒救回（A 交出 3 条 unconfirmed，B 5 条 confirmed 且 oracle 5/5）；`deepseek-v4-pro` 场景 B 这次自己交了卷（17 轮，与提醒无关，说明那一格本身有随机性）；`auto/glm-5.3` 与 `deepseek-v4-pro` 在场景 A 收到提醒后仍继续跑检查直到轮数耗尽（提醒无效）。`auto/minimax-m3`（渠道额度满）与 `qoder-cn/qmodel_38max`（渠道下线该模型）未能重测。
 
 - **场景 A**：本仓库的配置/工作流 diff（5 个文件，`--no-sandbox`）——这类没有代码可跑的 diff 最容易让推理模型陷入死循环翻目录。
 - **场景 B**：`fixtures/make_repo.sh` 的 5-bug 基准仓库（srt 沙箱、`--context tests/test_orders.py`、`--apply`），补丁由 `realmodel/oracle.py` 在宿主机逐一验证。
