@@ -19,6 +19,7 @@
 | `realmodel/analyze.py` | 从报告里统计 token、发现，以及 `run_shell` 里有几条真的执行了代码 |
 | `realmodel/results-srt-glm/`、`realmodel/results-srt-kimi/` | Mac mini M4 上经 Magpie 接入 `auto/glm-5.3`、`kimi-code-cn/k3.1-pro` 各跑 3 次的报告和汇总。云端模型，代码会发到服务商 |
 | `realmodel/results-convergence/summary.json` | 18 个模型在「本仓库配置类 diff」与「5-bug 基准仓库」两个场景上的收敛性跑分（n=1 每格），见下文「模型选型」 |
+| `edit-eval/` | 编辑格式评测器：固定模型和提示词，只换编辑格式（官方 V4A vs 精确 SEARCH/REPLACE）和 API 协议（OpenAI Chat / Responses / Anthropic Messages），配对比较 12 道题的编辑准确度。原始记录在 `edit-eval/results/results.jsonl`，见下文「V4A 与 old_str/new_str 的编辑准确度对比」 |
 | `demo-results-macos-srt.txt`、`demo-results-macos-srt-py39.txt` | macOS 27.2（Mac mini M4）上 `run_demo.sh` 的完整输出，`review.py` 分别用 Python 3.14.3 和系统自带的 3.9.6 运行 |
 | `demo-results-macos-no-sandbox.txt` | 同一台 Mac 上 `run_demo.sh no-sandbox` 的输出（CI 用的模式） |
 | `demo-results-linux-srt.txt` | Debian 13 容器（内核 6.12，x86_64，bubblewrap 0.12.0）上 `run_demo.sh` 的完整输出，Python 3.13.5 |
