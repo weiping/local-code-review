@@ -33,9 +33,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      LLM_BASE_URL: ${{ vars.LLM_BASE_URL }}            # https://open.bigmodel.cn/api/paas/v4
-      LLM_API_KEY: ${{ secrets.LLM_API_KEY }}           # Zhipu API key
-      AI_REVIEW_MODEL: ${{ vars.AI_REVIEW_MODEL }}      # glm-5.3
+      LLM_BASE_URL: ${{ vars.LLM_BASE_URL }}            # https://api.kimi.com/coding/v1
+      LLM_API_KEY: ${{ secrets.LLM_API_KEY }}           # Kimi Code plan key
+      AI_REVIEW_MODEL: ${{ vars.AI_REVIEW_MODEL }}      # k3.1-pro
       BASE: ${{ github.event.pull_request.base.sha }}
       HEAD: ${{ github.event.pull_request.head.sha }}
     steps:
