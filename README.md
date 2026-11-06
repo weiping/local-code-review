@@ -180,4 +180,4 @@ CI 改为直连 [Kimi K3.1 Pro](https://www.kimi.com/code) 的 OpenAI 兼容接�
 
 模型兼容：有的端点只接受一个 temperature（Kimi 只收 1），`review.py` 遇到 400 且报文提到 temperature 会自动改用 1 重试该轮。
 
-本仓库已启用 `.github/workflows/ai-review.yml`（读根目录 `review.py`）。其他仓库仍按模板：拷 `ci/ai-review.yml` 到 `.github/workflows/ai-review.yml`，并把 `review.py` 放到 `tools/review.py`。`--no-sandbox` 下模型的命令能读到这个 job 能读的一切，包括进程里的模型密钥，也能联网；job 只给 `contents: read`。本机开发仍可用 Magpie（例如 `auto/glm-5.3`），与 CI 直连厂商互不冲突。
+本仓库已启用 `.github/workflows/ai-review.yml`（读根目录 `review.py`）。其他仓库仍按模板：拷 `ci/ai-review.yml` 到 `.github/workflows/ai-review.yml`，并把 `review.py` 放到 `tools/review.py`。`--no-sandbox` 下模型的命令能读到这个 job 能读的一切，包括进程里的模型密钥，也能联网；job 只给 `contents: read`。本机开发仍可用 Magpie（例如 `kimi-code-cn/k3.1-pro`，与 CI 直连厂商同一个模型），与 CI 直连厂商互不冲突。
